@@ -1,0 +1,1524 @@
+Combat AI With AI: Counteract Machine-Generated Fake
+Restaurant Reviews on Social Media
+Alessandro Gambetti
+Nova School of Business and Economics
+Carcavelos, Portugal
+gambetti.alessandro@novasbe.pt
+Qiwei Han
+Nova School of Business and Economics
+Carcavelos, Portugal
+qiwei.han@novasbe.pt
+ABSTRACT
+Recent advances in generative models such as GPT may be used to
+fabricate indistinguishable fake customer reviews at a much lower
+cost, thus posing challenges for social media platforms to detect
+these machine-generated fake reviews. We propose to leverage the
+high-quality elite restaurant reviews verified by Yelp to generate
+fake reviews from the OpenAI GPT review creator and ultimately
+fine-tune a GPT output detector to predict fake reviews that signif-
+icantly outperforms existing solutions. We further apply the model
+to predict non-elite reviews and identify the patterns across several
+dimensions, such as review, user and restaurant characteristics, and
+writing style. We show that social media platforms are continuously
+challenged by machine-generated fake reviews, although they may
+implement detection systems to filter out suspicious reviews.
+KEYWORDS
+AI-generated Content, Natural Language Generation, Fake Review
+Detection, GPT, Social Media
+1
+INTRODUCTION
+Online reviews have served as valuable signals about product qual-
+ity that may bridge information asymmetries between customers
+and sellers in online marketplaces, which in turn influence cus-
+tomer purchases [17, 30, 56, 79]. Fake reviews can be defined as
+opinion-based disinformation, which is fabricated and propagated
+by spammers with the ambition of misleading and deceiving cus-
+tomers [59]. With the prevalence of review systems embedded in
+social media, such as Tripadvisor, Yelp, and Facebook, fake reviews
+are also witnessed to proliferate on these platforms, aiming to mis-
+lead customers by pretending to be authentic, in order to achieve
+unjustly competitive gains for certain businesses given the low cost
+and high monetary gain [34, 56, 58]. The COVID-19 pandemic may
+further exacerbate the issue because many less-experienced cus-
+tomers are forced to make more online purchases and tend to rely
+on reviews more heavily [53]. According to a report from World
+Economic Forum, fake reviews’ economic impact on global online
+spending has reached $152 billion in recent years [51].
+Given that the fundamental value of reviews is rooted in their
+authenticity that reflects customers’ truthful experience, fake re-
+views would not only harm customers but also severely threaten
+to erode their trust in online reviews and damage the reputation
+of social media [25, 49]. Typically, [25] showed that there exists a
+market of fake reviews, and sellers choose to rely on paid review
+farms for content creation. To this end, major platforms propose
+countermeasures to fight review fraud with both manual analyses
+by the content moderation team and automated systems. For exam-
+ple, since 2019, Tripadvisor has started to publish the transparency
+report outlining its effort to keep fake reviews off the site. The
+most recent report in 2021 revealed that over 2 million (3.6%) of
+reviews were determined to be fraudulent [78]. In a similar vein,
+Yelp implemented an automated recommendation software to filter
+off 4.3 million suspicious reviews out of 19.6 million reviews and
+only displayed the most reliable and helpful reviews on the main
+business pages [53]. However, social media still face significant chal-
+lenges to counteract machine-generated fake reviews effectively
+due to advances in generative models such as GPT models [55].
+On the one hand, fake reviews fabricated by AI systems trained on
+real reviews have become essentially indistinguishable. One study
+showed that machine-generated fake reviews could evade human
+detection and even receive a higher score of perceived usefulness
+compared to reviews written by humans [90]. On the other hand,
+the cost of machine-generated reviews is considerably lower than
+buying from sellers of human-crafted fake reviews.
+Overall, there is a large body of literature aimed at detecting,
+explaining, and analyzing how user-generated fake reviews impact
+social media platforms [59, 87]. However, no effort has been directed
+toward explaining, under different heterogeneous metrics, how
+fake AI-generated reviews have been affecting such platforms thus
+far, leaving a critical research gap in the literature. In this paper,
+we aim to detect and identify the patterns in machine-generated
+fake restaurant reviews fabricated from high-quality elite reviews
+on Yelp. As we leverage elite reviews that are verified by Yelp to
+generate fake reviews using OpenAI’s GPT-3 model, our survey
+results show that humans cannot distinguish AI-generated fake
+reviews effectively. Furthermore, we implement several fake review
+detection models and find that the fine-tuned GPT-3 model on our
+proposed dataset achieves the best performance. Lastly, instead of
+using filtered reviews as the proxy for fake reviews, we choose
+to evaluate non-filtered reviews more rigorously, by examining
+potential fake reviews that are not identified by the Yelp system
+across several dimensions, including review characteristics, user
+characteristics, restaurant characteristics, and writing style.
+Through ANOVA, we conducted a study that distinguished be-
+tween AI-generated fake reviews and authentic reviews across
+each dimension. Our analysis revealed that the average rating of
+fake AI-generated reviews is higher, and they are typically posted
+by users with less established reputations. Furthermore, fake re-
+views are comparatively easier to comprehend than authentic ones.
+Importantly, we also utilized official foot-traffic mobility data to
+demonstrate that fake AI-generated reviews are more commonly as-
+sociated with restaurants that receive fewer customer visits, which
+is a reliable indicator of restaurant demand. To the best of our knowl-
+edge, no prior study effectively established a correlation between
+fake reviews and customer visits.
+arXiv:2302.07731v3  [cs.CL]  21 Apr 2023
+
+This paper is organized as follows. Section 2 presents a compre-
+hensive review of the relevant literature regarding the influence
+and identification of fake reviews on social media platforms. Section
+3 outlines the supervised learning approaches used to detect and
+analyze fake reviews across multiple attributes. In Section 4, the
+findings are presented, followed by a discussion in Section 5, which
+links back to the existing literature and highlights any limitations
+encountered. Lastly, Section 6 concludes the paper.
+2
+LITERATURE REVIEW
+2.1
+Impact of Fake Reviews in Online Markets
+Different economic agents including retailers and platforms are
+known for manipulating online reviews [21, 28, 40]. For example,
+motivated by financial incentives, online merchants are inclined to
+distribute fake positive reviews for their own products or fake nega-
+tive reviews against competitors’ products [13, 59, 86]. Also, online
+platforms have the propensity to circulate fake reviews to augment
+website traffic to promote customer engagement [40]. Remarkably,
+individual users might also post fake content for reward-seeking
+purposes [2, 77, 84]. Overall, fake reviews weaken informative-
+ness and information quality [97], damaging review credibility and
+helpfulness [1, 72, 73, 83, 97, 99], which are the main factors new
+consumers take into account when browsing reviews before mak-
+ing purchase decisions. Additionally, extant research has demon-
+strated that the proliferation of fake reviews increases consumer
+uncertainty [32, 99], inducing customer distrust towards online
+reviews [15, 18, 100], undermining consumers’ purchase intentions
+[19, 54, 89, 100]. Specifically, in the context of Yelp, [19] executed an
+interdisciplinary study leveraging both qualitative and quantitative
+research methods such as surveys and linear models, respectively,
+showing that, from the output of univariate models only, consumers’
+exact knowledge of review fraud is statistically significantly con-
+nected to increased intentions to use Yelp as a tool before making
+purchase decisions.
+2.2
+Fake Reviews Characteristics and Detection
+Recent literature examined how fake reviews differed from legit
+ones across several characteristics such as writing style (e.g. read-
+ability and sentiment), ratings, restaurant characteristics, and user
+behavior. For each characteristic, we succinctly discuss its relevant
+related work.
+2.2.1
+Writing Style. [37] posited that reviews’ readability serves
+as a proxy for their helpfulness, as consumers must first read and
+then comprehend the text to assess their usefulness. Empirical re-
+search has further demonstrated that the likelihood of a review
+being deemed helpful increases when it is presented in an easily
+comprehensible manner [9]. Hence, several studies theorized that
+fraudsters might deliberately disseminate simple fake content to
+quickly catch readers’ attention [1, 42, 80], conceptualizing that
+fake reviews were easier to comprehend. Empirically, leveraging
+readability metrics such as the Automated Readability Index [69],
+[22] found that fake deceptive reviews exhibited less writing com-
+plexity as compared to truthful ones. However, no unanimous aca-
+demic consensus has been established on this finding, because other
+studies employing comparable methodologies showed the opposite
+result [3, 91].
+Also, textual review sentiment has been investigated for its effec-
+tiveness and helpfulness [67, 76]. As for fake reviews, consumers
+realized that more polarized sentiment tones could be surrogates
+for suspicious user-generated content [43]. For example, leverag-
+ing statistical tools such as standard t-tests and generalized linear
+models, prior research discovered that fake reviews were richer in
+positive cues as compared to authentic ones [3, 91]. Additionally,
+[41] adopted machine learning techniques to identify review spam,
+concluding that mixed or neutral sentiments were associated with
+truthful reviews. Also, employing ranking classification models,
+[44] described how spammers are not capable of expressing true
+sentiment when writing fake reviews, leading to more polarized
+opinions in the end.
+2.2.2
+Ratings and Restaurant Characteristics. Extreme senti-
+ment polarity was also detected when considering review ratings
+[48], which are a robust representative of sentiment as well. In
+particular, extant literature affirmed that positive fake reviews were
+more prevalent than negative ones [39, 94]. For example, [39] found
+that 56% of fake reviews were positive (4-5 stars) and that 29% were
+negative (1-2 stars). One hypothesis that may ex-post explain the
+prevalence of positive fake content could be that a one-star in-
+crease in the Yelp restaurant average rating is associated with a
+5-9% revenue growth [47]. As far as restaurant characteristics, [48]
+examined how fake restaurant reviews were present on Yelp. They
+found that about 16% of the reviews were filtered out as fake or
+suspicious, and that restaurants with fewer associated reviews were
+more likely to submit positive fake reviews to enhance their repu-
+tation. [48] also segmented restaurants into chain (e.g. McDonald’s,
+Burger King, Subway, etc.) and non-chain, finding the former ones
+less likely to display positive fake content, because their revenue
+is not significantly affected by their rating [47], and because they
+may incur high reputation costs if caught [52].
+2.2.3
+User Behavior. Fake reviews can also be identified by user
+behavior, i.e. spammers’ characteristics. For example, [66] describe
+the concept of singleton reviews, which is the phenomenon of users
+posting only one fake review. Because of that one-to-one relation-
+ship, spotting and tracking activities of singleton review spammers
+is challenging [63, 88]. [5] defined four subsets of user-centric fea-
+tures to analyze Yelp reviews: personal profile features (e.g. profiles
+description), social interaction features (e.g., user number of friends),
+review activity features (e.g. number of previous reviews), and trust
+information features (e.g. number of photos posted). Here, they
+leveraged supervised machine learning techniques to classify fake
+versus authentic reviews, showing that review activity features were
+the most relevant in terms of classification accuracy. Inherent to our
+paper, they also described how accounts associated with consistent
+spamming of fake user-generated content displayed fewer friends,
+fewer photos posted, and fewer reviews as compared to accounts
+conducting a genuine activity. Strengthening this finding, [48] also
+confirmed that fake reviews were more likely to be posted by users
+with less established reputations, as determined by fewer friends
+and reviews published.
+2
+
+2.2.4
+Detection. Human evaluators were found to systematically
+fail at distinguishing user-generated fake reviews from genuine
+ones [13]. For example, [57] surveyed members of the general public
+to detect fake reviews, finding that the best human judge achieved
+an accuracy of 65%. Inherently, [58] found a similar result for the
+same task amounting to 61% accuracy. Also, [60] and [74] recorded
+comparable human performance in similar experimental settings,
+with humans achieving average accuracy detection rates of 57% and
+52%, respectively. Such findings demonstrate that humans perform
+at an accuracy level comparable to random guessing. In contrast,
+fake reviews detection, viewed as a binary "spam versus non-spam"
+[34] or "fake versus non-fake" [82] supervised learning problem,
+showed promising results. Models such as logistic regression [36,
+45], naive Bayes [27, 45, 95], random forest [93], and XGBoost
+[24] served as valuable benchmarks for more sophisticated models
+such as deep convolutional neural networks [64, 98] and recurrent
+neural networks [98]. Also, large language models (LLM) such
+as GPT-2 or RoBERTa, depending on the attention mechanism
+[81] have been employed in spam detection tasks [33, 65]. For
+example, as early as 2011, [58] achieved detection accuracy rates
+above 85% with models such as naive Bayes out of sample. More
+recently, [65] achieved 97% F1-score with a RoBERTa transformer
+in a comparable experimental setting. These findings demonstrate
+how natural language processing and machine learning techniques
+outperform human capabilities with a high degree of accuracy and
+efficiency in terms of identifying patterns and trends in the fake
+review detection domain.
+3
+METHODOLOGY
+In this section, we describe the methodology used. We explain how
+we: (1) collected data and generated fake GPT-3 reviews, (2) asked
+human judges and implemented machine learning algorithms to
+detect them, and (3) inferred and explained the predictions of fake
+versus non-fake reviews on a set of unverified reviews. Figure 1
+illustrates the GPT-3 pipeline from fake review generation to de-
+tection. As of 2022, GPT-3 is a state-of-the-art natural language
+processing model developed by OpenAI that has gained consider-
+able attention due to its impressive performance in a wide range
+of language-related tasks [8]. Its ability to learn the patterns and
+structures of language at an unprecedented scale has enabled the
+model to generate coherent and contextually relevant text that is
+often indistinguishable from that written by humans. The power
+and versatility of GPT-3 make it a valuable methodology for both
+text generation and detection. It is necessary to highlight that a
+successful application of GPT-3 models is the recent introduction
+of ChatGPT, a chatbot that leverages their architecture to engage in
+human-like conversations and provide support to users in question-
+answering tasks. However, the wide accessibility and (current) nil
+usage costs of ChatGPT may also enhance the capabilities of ma-
+licious actors to generate fraudulent content to be disseminated
+on social media platforms. This raises concerns about the poten-
+tial misuse of GPT-3-based models and underscores the need for
+vigilant monitoring and control of its applications.
+Figure 1: We leveraged OpenAI’s GPT-3 Davinci and Curie
+models to create a dataset of fake reviews. Prompts were
+elite reviews posted by elite users. Therefore, the generated
+dataset contained equally balanced real elite and fake re-
+views. To classify them accurately, we fine-tuned a GPT-Neo
+(GPT-3 equivalent) model, which was used to predict the
+probability of non-elite reviews being AI-generated.
+3.1
+Data Collection
+We accessed the 2021 to mid-2022 New York City restaurant mobil-
+ity data from the company SafeGraph (https://www.safegraph.com)
+to collect a dataset of restaurants. New York City was selected
+because it offers a variety of restaurants serving distinct culinary
+tastes within an international setting, thereby providing sufficient
+heterogeneity for our study. Next, we scraped all restaurant-related
+customer reviews from Yelp. In total, we collected 447,295 reviews
+connected to 5,959 restaurants. Each example includes the review
+text, the date it was posted, the rating, the poster’s Yelp elite status,
+the poster’s number of previous reviews, and the poster’s number
+of uploaded photos. Then, we enriched the data by (1) querying
+the Yelp official API downloading restaurant-related variables (each
+review was connected to) such as the average rating and the price
+level, and (2) including the raw number of visits and the normalized
+number of visits by the total visits (in the New York state) from
+the original SafeGraph data. SafeGraph collects visit data by lever-
+aging various data sources, including GPS signals, Wi-Fi signals,
+and Bluetooth signals from visitors’ mobile devices. The company
+uses a combination of these signals to determine the temporal lo-
+cation of devices in the physical world, and then aggregates this
+information to create a comprehensive dataset of visit information.
+Overall, SafeGraph datasets have been extensively used in diverse
+research domains, including public health [10], impact of mobility
+restrictions and compliance [11], disease transmission patterns and
+epidemiological simulations [25, 70], and estimation of alcohol sales
+[31], among others.
+3.2
+Fake Reviews Generation
+After collecting the main data, we used the OpenAI publicly avail-
+able GPT-3 API to build a dataset of fake reviews (https://openai.
+com/api). As of 2022, four different GPT-3 sub-models could be
+3
+
+chosen at different price rates: Ada (0.0004$ / 1K tokens), Babbage
+(0.0005$ / 1K tokens), Curie (0.0020$ / 1K tokens), and Davinci
+(0.0200$ / 1K tokens). Naturally, the higher the price rate, the more
+accurate the model instruction-following. A higher price rate also
+translates into larger model sizes, as measured by the number of
+parameters, which are not officially disclosed by OpenAI. Simply
+put, a larger number of parameters leads to increased performance.
+We then randomly sampled 12,000 reviews from a total of 92,253
+elite reviews (out of 447,295 total scraped reviews) representing
+4,994 restaurants, and used the elite-sampled texts as prompts to
+generate related fake reviews. Elite reviews are written by elite
+users, who Yelp thoroughly verifies. According to Yelp, to apply
+for an elite membership, a user is expected to have consistently
+posted thoughtful reviews, uploaded beautiful pictures, and up-
+voted others’ reviews. Therefore, we assume that elite reviews are
+a reliable proxy of information reflecting real customers’ opinions.
+As a prompt, we utilized the default template that OpenAI provides
+for restaurant fake review generation:
+"Write a restaurant review based on these notes:
+Name: [Example restaurant name]
+[Example elite review text]"
+For each prompt, we randomly selected one model between Curie
+and Davinci with equal probability. Also, we randomly sampled the
+Temperature value, a hyper-parameter controlling the randomness
+of the generated text, from 𝑈∼(0.3, 0.7). For general reference, a
+value of 0 generates a deterministic and repetitive text and 1 vice
+versa. All the other hyper-parameters were kept as default. Table 1
+provides three examples with different sentiments. As a result, the
+final dataset of 24,000 reviews, equally balanced between elite and
+fake reviews, was split into 80% training and 20% testing for later
+use.
+3.3
+Survey Design for Fake Reviews Detection
+We ran a human study in which each respondent was asked to select
+the AI-generated review from a set of review pairs. The surveying
+strategy consisted of two steps.
+Firstly, we sampled and showed 15 review pairs from the training
+set to "train" the respondents for the task, with each pair containing
+one human-generated review and one AI-generated review. Sec-
+ondly, we sampled 40 review pairs from the test set and used those as
+survey questions. Train and test set human-written reviews average
+about 140 words per review (std 75 words). Here, we picked human-
+written reviews in the range 140 ± 40 words away, with reviews
+exceeding 140 words categorized as long, and vice-versa, and paired
+a comparable length AI-generated review (max 30 words difference).
+For the questions, we randomly selected 10 same-restaurant long re-
+view pairs (Same-Long, 140>words>180), 10 same-restaurant short
+review pairs (Same-Short, 100<words<140), 10 different-restaurant
+long review pairs (Different-Long), and 10 different-restaurant short
+(Different-Short) review pairs. In relation to the response options,
+a third alternative, "Cannot decide. I’m unsure", was included to
+enable study participants to indicate their uncertainty instead of
+having to resort to a random guess. This additional response choice
+aimed to enhance the accuracy and reliability of the survey data
+collected by reducing the impact of arbitrary guessing, which may
+compromise the validity of the study. All the pairs were randomly
+spread across the survey form, and two questions were converted
+into attention checks to monitor the respondents’ care.
+The survey was then sent to 90 participants through the Prolific
+platform, and they were paid about $8.30 per hour. After removing
+10 attempts connected to inattentive answers, we counted 80 valid
+responses related to 38 questions, totaling 3,040 single-question re-
+sponses. We reported the overall average accuracy and the average
+accuracy for all four categories. Finally, we conducted a Tukey’s
+HSD test to validate whether such category averages were statisti-
+cally different.
+3.4
+Automating Fake Reviews Detection with
+AI
+We deployed machine learning techniques to carry out the same
+task as above. Practically, we fine-tuned a pre-trained GPT-Neo
+model [6, 20] to classify fake versus real reviews.
+GPT models belong to the family of transformer models, which
+have become state-of-the-art in natural language processing and
+computer vision. The reason why transformer models are powerful
+is that they rely on the attention mechanism [81], allowing the
+network to focus mainly on the most relevant parts of the input
+sequence. GPT-Neo is designed using EleutherAI’s replication of
+the GPT-3 architecture, which currently is OpenAI’s proprietary
+software. As such, GPTNeo is a scale-up of the GPT [61] and GPT-2
+[62] models.
+Practically, we accessed a 125 million parameters pre-trained
+version from Huggingface (https://huggingface.co/EleutherAI/gpt-
+neo-125M), and fine-tuned it with our generated fake restaurant
+reviews dataset. We benchmarked GPT-Neo with other machine
+learning models such as Bidirectional-LSTM, Logistic Regression,
+Naive Bayes [50], Random Forest [7], XGBoost [12], and GPT-
+2. We also benchmarked it to the current open-source OpenAI’s
+RoBERTa model for GPT fake text detection [71]. We trained with
+5-fold cross-validation on the training set for the machine learning
+models and reported the results on the test set. Review texts were
+represented with a bag-of-words approach, which tokenizes text
+into individual words and then counts the frequency of those words
+in each document. While for the deep learning models (BiLSTM,
+GPT-2, and GPT-Neo), we extracted another 20% partition from
+the training set as validation data since computing 5-fold cross-
+validation is computationally expensive. Here, review texts were
+tokenized using Byte-Pair Encoding (BPE) [68], which is a byte-level
+data compression algorithm used to segment words into subword
+units by iteratively merging the most frequently occurring pairs
+of adjacent bytes. We trained using the AdamW optimizer default
+hyper-parameters [46], using a learning rate of 1e-4, decaying it by
+a factor of 0.1 every 5 epochs, a batch size of 1, and early-stopping at
+10 epochs. For the GPT-Neo, we computed the optimal classification
+threshold at each epoch by optimizing Youden’s J statistics in the
+validation set [92], calculated as the difference between the true
+positives rate and false positives rate. Finally, the best weights and
+classification threshold were saved, and evaluation was performed
+on the test set. For all the models, we reported the accuracy score,
+precision score, recall score, and F1 score.
+4
+
+Table 1: Examples of prompt and GPT-3 generated reviews discriminated by different sentiments.
+Sentiment
+Prompt (Real)
+Generated (Fake)
+Negative
+"Unfortunately I found the soup to be very bland. I’m not
+sure if it was a one off but I was very disappointed."
+"I was really disappointed with Noona Noodles. The soup
+was very bland and I wasn’t sure if it was just a one-off, but
+I didn’t enjoy it at all. I wouldn’t recommend it."
+Neutral
+"Came here for brunch. The shrimp and grits were good so
+was the okra and molasses corn bread. The owner, Randy,
+came out to greet the tables. The only issue that almost
+prevented me from the 4 rating is the long wait for the
+food. There were several tables complaining. I suggest they
+give the tables biscuits or rolls to address the hunger while
+waiting."
+"Overall, I had a good experience at Spoonfed NYC. The
+shrimp and grits were delicious, as was the okra and mo-
+lasses corn bread. The only downside was the long wait for
+the food. If they could address the hunger issue, I would
+have given this restaurant a 4-star rating."
+Positive
+"So happy there’s a dim sum spot near my hood! I only
+thought Jin Fong only excited in Chinatown. I’m really sur-
+prised it has low ratings because every dish I order was
+really good and service was great! It’s a little pricey of
+what I’m used to of ordering dim sum ($8 a dish of dim
+sum). Things I ordered: - Har Gow Shrimp Dumplings-
+Crab, Shrimp, Spinach Dumplings- Pork and Chicken Soup
+Dumplings- Shrimp Rice Noodles Rolls- Shrimp and Chive
+Dumplings"
+"If you’re in the mood for some delicious dim sum, Jin Fong
+is the place to go! I was really surprised by how good every-
+thing I ordered was - the shrimp rice noodles rolls, shrimp
+and chive dumplings, and pork and chicken soup dumplings
+in particular were all delicious. The only downside is that
+the prices are a little higher than I’m used to paying, but
+overall it was a great experience."
+3.5
+Inference on Non-Elite Reviews
+With the best GPT-Neo classifier, we performed inference on the
+unverified non-elite reviews, determining the probability of each
+one being fake. Importantly, reviews posted before 2020 (included)
+were dropped, since GPT-3 models were beta-released in 2020. Here,
+we hypothesized that GPT-3-based AI crowdturfing campaigns
+were implemented in the last two years, given the GPT-3 API’s
+easy accessibility and low usage costs. This operation reduced the
+inference dataset to 131,266 non-elite reviews. Importantly, Yelp
+implements a proprietary algorithm to flag and filter fake reviews
+[47]. In this paper, we performed inference on reviews that had
+already passed the Yelp filtering system.
+Each example review incorporates a review-based variable, i.e.
+the review rating (Rating), distributed as a 1 to 5 Likert scale; user-
+based variables, i.e. the user’s number of friends (#Friends), the
+user’s aggregated number of previously posted reviews (#Reviews),
+and the user’s overall number of posted photos (#Photos); and restau-
+rant-based variables, i.e. the restaurant’s average rating from all
+the reviews (AvgRating), the price level (PriceLevel), i.e. the average
+price per person as “$”: under $10, “$$”: $10–$30, “$$$”: $31–$60 and
+“$$$$”: over $60, the overall number of restaurant reviews posted
+by customers (#RestReviews), the chain status (ChainStatus), com-
+puted adopting Zhang & Luo (2022) approach [96], which counts
+the number of unique restaurant names in the dataset, and assigns
+those appearing more than five times as belonging to a restaurant
+chain (e.g. McDonald’s, Starbucks, Burger King, etc.), the number
+of customer visits between 2021 and mid-2022 (#Visits), and the
+normalized number of visits (NormVisits), multiplied by 1,000 for
+easier readability. A summary statistics is provided in Table 2.
+Afterward, classification was performed with a sensitivity analy-
+sis approach at the [.5, .6, .7, .8, .9, .99 and J] classification thresholds.
+For each threshold, we separated predicted fake versus non-fake
+Table 2: Summary statistics of non-elite reviews related vari-
+ables.
+Name
+Category
+Mean
+Std
+Rating
+Review
+3.98
+1.44
+#Friends
+User
+70.71
+174.22
+#Reviews
+User
+43.25
+129.56
+#Photos
+User
+63.90
+722.89
+AvgRating
+Restaurant
+3.96
+0.49
+PriceLevel
+Restaurant
+2.23
+0.67
+#RestReviews
+Restaurant
+747.47
+1045.94
+#Visits
+Restaurant
+2993.03
+5835.29
+NormVisits
+Restaurant
+0.19
+0.37
+ChainStatus
+Restaurant
+0.14
+0.35
+reviews, and performed ANOVA for each aforementioned variable
+to inspect differences across the two predicted categories. This
+methodology was adopted because the labels about whether non-
+elite reviews were AI-generated were not available. Thus, different
+thresholds were tested to examine the sensitivity and robustness of
+predictions.
+3.6
+Writing Style: Explaining the Predictions
+In our context, writing style refers to how a textual review is con-
+structed by the writer, sentence-by-sentence, and word-by-word.
+Although it is hard to distinguish at first impact, we believe that
+humans and AI have different writing styles, with the latter being
+more repetitive, more predictable, and less sophisticated than the
+former.
+We considered three classes of metrics to evaluate the writing
+style of each non-elite review: perplexity-based, readability-based,
+5
+
+and sentiment-based metrics. Perplexity-based metrics include Per-
+plexity (PPL) and Textual Coherence (TC).
+𝑃𝑃𝐿(𝑋) = exp
+"
+−1
+𝑡
+𝑡∑︁
+1
+log𝑝(𝑥𝑖|𝑥<𝑖)
+#
+(1)
+As in Equation 1, PPL is defined as the exponential average
+negative log-likelihood of a sequence of words 𝑤𝑖,𝑤𝑖+1 . . .𝑤𝑖+𝑡.
+In simple terms, it measures the conditional probability that each
+word follows its preceding one. As of 2022, PPL is one of the most
+widely adopted metrics to evaluate the accuracy of language models.
+Generally, a low PPL score implies better grammar text correctness
+and cohesion.
+Then, by breaking a review into a sequence of sentences, we in-
+troduce the concept of Textual Coherence (TC). TC is defined as the
+presence of semantic relations among sentences. In simple words,
+given a corpus containing a set of sentences that when viewed inde-
+pendently convey a valid meaning, if by reading them sequentially
+no meaning is conveyed, then the corpus is not coherent. To mea-
+sure TC, we deployed the Zero-Shot Shuffle Test [38, 85]. Namely,
+we split each review into single sentences and generated all the
+possible sentence permutations. We scored each permutation with
+the PPL as in Equation 1 and subtracted the original perplexity
+score, obtaining a per-review set of perplexity changes, which we
+averaged to compute TC. It is important to highlight that some
+reviews contained a large number of sentences, leading to high
+computational costs in generating permutations. Mathematically,
+given a set of 𝑛sentences (population), and a subset of 𝑟sentences
+to be chosen from 𝑛, it is possible to generate all the permutations
+without repetition 𝑃(𝑛,𝑟) =
+𝑛!
+(𝑛−𝑟)!. In our problem, 𝑛= 𝑟, meaning
+that 𝑃(𝑛,𝑟) = 𝑛!, which incurs an expensive computational cost
+𝑂(𝑛!). To mitigate that, we sampled 𝑠sentences from each review
+such that 𝑠= 𝑚𝑖𝑛(𝑛, 5). We chose 5 as a maximum threshold be-
+cause such value represents the median number of sentences per
+review, and because 5! per-review permutations are still compu-
+tationally feasible to be processed. To calculate both PPL and TC,
+we adopted a general purpose pre-trained 125 million parameters
+GPT-Neo.
+As for readability-based metrics instead, we considered the fol-
+lowing metrics: Automated Readability Index (ARI) [69], Number of
+Difficult Words (#DW), and Readability Time (RTime). ARI is one of
+the most widely adopted readability indices to evaluate the read-
+ability of a given text. Also, it has already been adopted in other
+studies evaluating the readability of online reviews (e.g. [22, 29]).
+𝐴𝑅𝐼= 4.71 #𝐶ℎ𝑎𝑟𝑠
+#𝑊𝑜𝑟𝑑𝑠+ 0.5 #𝑊𝑜𝑟𝑑𝑠
+#𝑆𝑒𝑛𝑡𝑒𝑛𝑐𝑒𝑠−21.43
+(2)
+As in Equation 2, ARI decomposes the text into basic structural
+elements such as the number of characters (#Chars), number of
+words (#Words), and number of sentences (#Sentences). Unlike other
+readability indices, the main advantage of ARI is that it relies on
+the number of characters per word and not on the number of syl-
+lables per word, therefore being more accurate to calculate for a
+computer. Also, the interpretation of ARI is straightforward, as its
+output produces an approximated representation of the US-grade
+education level needed to understand the text. For example, an ARI
+of 9.2 indicates that a 9th-grade student can understand the text.
+Table 3: Tukey-HSD test results across categories. In brack-
+ets the category unweighted by abstention rate accuracy av-
+erages in percentage. "Different" stands for different restau-
+rants, and "Same" vice versa. "Long" stands for a long review,
+and "Short" vice versa. *p<.05, **p<.01, ***p<.001.
+Category 1
+Category 2
+MeanDiff
+Different-Long (50.76)
+Different-Short (55.11)
+4.35
+Different-Long (50.76)
+Same-Long (61.39)
+10.63*
+Different-Long (50.76)
+Same-Short (61.93)
+11.17**
+Different-Short (55.11)
+Same-Long (61.39)
+6.28
+Different-Short (55.11)
+Same-Short (61.93)
+6.82
+Same-Long (61.39)
+Same-Short (61.93)
+0.54
+Simply put, the higher the ARI score, the higher the difficulty in
+text comprehension for an average interlocutor. Next, #DW is the
+count of difficult words present in a text. By looking at the Dale-
+Chall Word List [14], which contains approximately 3,000 familiar
+words known by an average 5th-grade student, if a word is not
+present in the list, then it is labeled as difficult. Then, RTime was
+computed by following [16], who found that each text character
+needs an estimated average of 14.69 milliseconds to be digested by
+the reader. Finally, the only sentiment-based metric is the SiEBERT
+Sentiment score [23]. SiEBERT is based on a RoBERTa architecture
+and fine-tuned on 15 different datasets. Its output ranges from -1
+(negative) to +1 (positive).
+To sum up, we scored each review with the above-mentioned
+perplexity-based, readability-based, and sentiment-based metrics.
+Afterward, for each metric, we performed ANOVA to inspect differ-
+ences across the predicted fake versus real reviews with the same
+methodology mentioned in Section 3.5.
+4
+RESULTS
+4.1
+Human Evaluations versus Model
+Evaluations
+Surveyed people from the general public only attained an accuracy
+score of 57.13% (std 13.57%), meaning that humans are only 7.13%
+better than random guessing (=50%). In addition, we recorded an
+abstention rate (i.e. selecting the "Cannot Decide. I’m unsure option")
+of 11.15% (std 12.66%). In Table 3, we report the Tukey-HSD results
+across the different categories. Here, we did not discover significant
+differences across categories, except for (1) Different-Long versus
+Same-Long (10.63, p<.05), and (2) Different-Long versus Same-Short
+(11.17, p<.01) pairs. Apparently, for long reviews, humans are more
+accurate in distinguishing fake content when the review is asso-
+ciated with the same restaurant. However, with these results, we
+concluded that humans are not generally capable of distinguishing
+real versus fake content. Conversely, machine learning algorithms
+attained significantly better performance than human evaluators.
+In Table 4 we provide the classification report of the classifiers.
+We observed that the current OpenAI’s fake text detector bench-
+mark improved human evaluators’ accuracy by 19.65%, meaning
+that machines are more suitable for performing the task. This claim
+6
+
+Table 4: Models classification report on test set ranked by
+F1-score.
+Model
+Accuracy
+Precision
+Recall
+F1-score
+OpenAI
+76.78
+84.87
+64.98
+73.60
+NB
+83.48
+93.62
+71.72
+81.22
+RF
+82.39
+84.61
+79.01
+81.72
+XGB
+83.18
+86.59
+78.38
+82.28
+LR
+85.07
+87.00
+82.34
+84.61
+BiLSTM
+93.71
+93.09
+93.09
+93.09
+GPT-2
+94.63
+94.57
+94.65
+94.61
+GPTNeo
+95.21
+94.74
+95.70
+95.22
+GPTNeo@J
+95.51
+95.80
+95.15
+95.48
+was strengthened by looking at the performance of standard ma-
+chine learning algorithms. In particular, LR ranked as the top per-
+former among those with an accuracy score and F1-score of 85.07%
+and 84.61%, respectively. As for deep learning models, GPT-Neo
+models ranked as top performers. Specifically, the GPT-Neo max-
+imizing accuracy after calculating the Youden’s-J statistics as the
+optimal classification threshold in the validation set (GPT-Neo@J)
+achieves the best performance. Convergence occurred at the 2nd
+epoch, with optimal 𝐽∗=.5708. Overall, GPT-Neo@J significantly
+outperforms human evaluators and OpenAI’s benchmark by 38.38%
+and 18.73%, respectively. With this finding, we applied the opti-
+mized GPT-Neo@J model for inference on the unverified non-elite
+reviews.
+4.2
+ANOVA Results
+Unless differently specified, ANOVA results are discussed at the .05
+significance level and at the optimized classification threshold 𝐽∗
+found in Section 4.1. In Table 5, we provide a per-variable summary.
+Out of a total of 131,266 non-elite reviews posted from 2021
+onwards, 8.48% were predicted as fraudulent. As demonstrated in
+Figure 2, this percentage decreases as the threshold 𝑡is lowered. For
+instance, at a threshold of 𝑡=.99, only .10% of reviews were detected
+as AI-generated.
+4.2.1
+Review-based and User-based. For the review Rating,
+and the users’ #Reviews, #Friends and #Photos all differences across
+predicted fake AI-generated and predicted real reviews were sta-
+tistically significant. Here, reviews classified as fake were given a
+higher average star Rating (+.43, 𝑝<.001). As for user-based vari-
+ables, reviews classified as fake were posted by users with a lower
+average number of #Friends (-5.59, 𝑝<.01), a lower average number
+of previously posted #Reviews (-11.37, 𝑝<.001), and a lower average
+number of previously posted #Photos (-34.32, 𝑝<.001). In Figure
+3, we show a sensitivity analysis considering other thresholds 𝑡
+of classification. Remarkably, when the threshold 𝑡is set to .99,
+both Rating and #Reviews exhibited greater statistically significant
+differences, with disparities of +.66 (𝑝< .001) and -24.06 (𝑝< .05), re-
+spectively. In contrast, the variables #Friends and #Photos no longer
+demonstrated statistical significance at this threshold.
+4.2.2
+Restaurant-based. We observed that predicted fake re-
+views were associated with restaurants with a higher AvgRating
+Figure 2: Percentage of predicted fake reviews at each
+threshold. In blue, highlighted the 𝐽∗=.5708 optimal thresh-
+old.
+Table 5: Summary of ANOVA results at 𝐽∗=.5708 classifica-
+tion threshold for the average predicted human (real) and
+AI (fake). *p<.05, **p<.01, ***p<.001.
+Name
+Category
+Human
+AI
+F-statistic
+Rating
+Review
+3.94
+4.37
+914.91***
+#Friends
+User
+71.19
+65.60
+10.45**
+#Reviews
+User
+44.21
+32.84
+78.46***
+#Photos
+User
+66.81
+32.49
+22.96***
+AvgRating
+Restaurant
+3.97
+4.00
+41.84***
+PriceLevel
+Restaurant
+2.24
+2.22
+3.52
+#RestReviews
+Restaurant
+743.68
+788.39
+18.61***
+#Visits
+Restaurant
+3004
+2866
+5.22*
+NormVisits
+Restaurant
+0.19
+0.18
+5.18*
+ChainStatus
+Restaurant
+0.14
+0.14
+0.04
+Perplexity
+Writing
+78.70
+83.38
+14.01***
+Coherence
+Writing
+25.31
+21.20
+3.33
+ARI
+Writing
+7.05
+6.82
+13.35***
+#DW
+Writing
+10.70
+6.76
+1847.82***
+RTime
+Writing
+5.21
+2.87
+2532.22***
+Sentiment
+Writing
+0.47
+0.71
+779.17***
+(+.03, 𝑝<.001). However, given the minimal difference, we acknowl-
+edge the modest practical implications that such a result may bring
+about. Then, we documented statistical significance concerning #Re-
+stReviews. Here, predicted fake reviews were connected to restau-
+rants that displayed a greater average number of reviews avail-
+able (+44.71, 𝑝<.001). The opposite behavior was observed for the
+average #Visits, in which predicted fake reviews were linked to
+restaurants that received fewer customer visits from 2021 to mid-
+2022 (-138, 𝑝<.05). This result was strengthened by NormVisits (-.01,
+𝑝<.05). Finally, no significant differences were noticed for the Chain-
+Status and the PriceLevel (𝑝>.05). In Figure 4, we show a sensitivity
+analysis considering other thresholds 𝑡of classification.
+4.2.3
+Writing Style. AI-generated fake reviews showed a higher
+average Perplexity (+4.68, 𝑝<.001). However, Perplexity of predicted
+7
+
+Figure 3: Sensitivity analysis of review-based and user-based
+variables. In blue, highlighted the 𝐽∗=.5708 optimal thresh-
+old value. Error bars are the confidence intervals at the .05
+significance level.
+AI-generated fake reviews also displayed a statistically significant
+downtrend when increasing the classification threshold 𝑡(𝑝<.05),
+eventually scoring lower than for predicted human-generated re-
+views from 𝑡>.7. Instead, when considering Textual Coherence, i.e.
+defined as the change in perplexity between sentence-shuffled doc-
+uments, no statistical significance was observed (𝑝>.05). Figure 5
+shows the sensitivity analysis.
+As for readability-based metrics, predicted AI-generated fake
+reviews were discovered to be more readable and less difficult to
+comprehend compared to the human-generated ones. Both aver-
+age ARI and average #DW scored lower for AI-generated content,
+(-.23, 𝑝<.001) and (-3.94, 𝑝<.001), meaning that such content can
+be understood by a wider audience. Also, predicted AI-generated
+fake reviews were faster to read by 2.34 seconds (𝑝<.001). Lastly,
+for Sentiment, we observed that predicted AI-generated reviews
+have a more positive tone (+.24, 𝑝<.001). Here, predicted human
+text averaged to a medium positive polarity close to .5 at each 𝑡;
+while, predicted AI-generated text displayed a statistically signifi-
+cant positive trend, ending up at .87 at 𝑡=.99 (𝑝<.001).
+5
+DISCUSSION
+Aligned with findings from prior studies in fake reviews identifica-
+tion [58, 65, 74], we described how human evaluators systematically
+fail at detecting GPT-3 AI-generated content (AIGC) in the domain
+of restaurant reviews. On the contrary, machine learning models
+significantly achieve superior performance (+38.38% accuracy). We
+have also shown that optimizing Youden’s J statistic in the vali-
+dation set can further improve prediction accuracy (+.3%). Such
+Figure 4: Sensitivity analysis of restaurant-based variables.
+In blue, highlighted the 𝐽∗=.5708 optimal threshold value.
+Error bars are the confidence intervals at the .05 significance
+level.
+disparity in performance between humans and machines could
+be possibly attributed to human cognitive limitations at detecting
+patterns from large-scale unstructured data [35]. Prior studies that
+leveraged machine learning techniques reported filtering out user-
+generated fake reviews at estimated rates around 15% [39, 48, 75].
+In our sample of customer reviews that already passed the filtering
+system of social media (Yelp), we further documented that up to
+8.48% of them were fake reviews generated by AI. We then explored
+how fake AI-generated reviews differentiate from human-generated
+reviews across several associated dimensions. In Table 6, we sum-
+marize extant literature findings on user-generated fake reviews
+compared to our findings on AI-generated fake reviews. Firstly,
+we observed that predicted AI-fake reviews score a higher average
+Rating compared to the human-generated ones (+.43, 𝑝<.001). This
+finding is congruent with conclusions from [48], who documented
+that fake reviews have a bimodal distribution with spikes at 1 and
+5 stars, and from [39], who singled out 56% of positive reviews out
+of 15,000 hotel fake reviews on Yelp. Extant literature may provide
+8
+
+Figure 5: Sensitivity analysis of writing-style variables. In
+blue, highlighted the 𝐽∗=.5708 optimal threshold value. Er-
+ror bars are the confidence intervals at the .05 significance
+level.
+a rationale for our result, as they suggest that economic agents
+seeking to bolster or restore their reputation may be more likely to
+engage in the self-promotion of falsely positive reviews [48, 59, 86],
+because, for example, a one-star increase in the average Yelp rating
+has been documented to be associated with 5-9% revenue growth
+[47]. Secondly, consistent with prior observations from [5, 48], users
+that post more predicted fake AI-generated reviews have less estab-
+lished Yelp reputations as compared to those that allegedly post real
+content: fewer previously posted #Reviews (-11.37, 𝑝<.001), fewer
+#Friends (-5.59, 𝑝<.01), and fewer previously posted #Photos (-34.32,
+𝑝<.001). Such diminished engagement levels exhibited by users
+that post more predicted fake AI-generated reviews might indicate
+an inclination toward spamming activities. It might be logical to
+presume that fraudsters engaging in spamming behavior would
+demonstrate lower levels of activity on a given platform. This might
+be due to their employment of rotating accounts to disseminate
+fabricated content, which might explain their lack of interest in
+Table 6: Summary of the findings from extant literature re-
+lated to UGC fake reviews extend by this research to the
+realm of AIGC fake reviews.
+Variable
+Study UGC Prior Results
+AIGC Results (ours)
+Rating
+[48]
+Bimodal
+distribu-
+tion. Spikes at 1
+star and 5 stars.
+Fake more positive.
+Rating
+[39]
+Fake more positive.
+Fake more positive.
+#Friends
+[5]
+Fake fewer friends.
+Fake fewer friends.
+#Friends
+[48]
+Fake fewer friends.
+Fake fewer friends.
+#Photos
+[5]
+Fake fewer photos.
+Fake fewer photos.
+#Reviews
+[5]
+Fake fewer reviews.
+Fake fewer reviews.
+#Reviews
+[48]
+Fake fewer reviews.
+Fake fewer reviews.
+ChainStatus
+[48]
+Chain display less
+fake content.
+No statistical differ-
+ence.
+#RestReviews [48]
+Stronger incentives
+to post fake reviews
+when few reviews
+displayed.
+Fake more reviews.
+ARI
+[22]
+Fake less complex.
+Fake less complex.
+ARI
+[91]
+Fake more complex.
+Fake less complex.
+Sentiment
+[91]
+Fake more positive.
+Fake more positive.
+Sentiment
+[4]
+Fake more positive.
+Fake more positive.
+Sentiment
+[44]
+Fake more polar-
+ized.
+Fake more positive.
+cultivating reliable and trustworthy reputations within the Yelp
+community. At the extreme of this phenomenon, such a pattern
+is exacerbated by the presence of singleton-review spammers, who
+generated a multitude of accounts that end up publishing a single
+review per account as a consequence of their fraudulent activity
+[66].
+Thirdly, regarding restaurant-based variables, our study found
+no significant impact of fake AI-generated reviews on the overall
+average restaurant rating, price level, and chain status. Specifically,
+the very marginal difference of +.03 (𝑝<.001) in AvgRating lacks
+practical relevance since humans are not affected by such a small
+difference. Moreover, no difference in AI-generated fake reviews
+from either PriceLevel or ChainStatus showed any statistical signifi-
+cance. However, it is worth pointing out that our findings are in
+contrast with prior research concerning chain restaurants, as [48]
+found that they are less likely to display fake content to protect
+their brand reputation. Next, predicted AI-generated fake reviews
+tend to be associated with restaurants displaying more reviews on
+their Yelp web pages (#RestReviews, +44.71, 𝑝<.001). Yet, extant liter-
+ature posited that restaurants have a stronger incentive to post fake
+reviews when few reviews are available [48], because the marginal
+benefit of each additional review is higher since Yelp focuses on
+the average rating as an indicator of customer satisfaction to be
+reported in restaurant web pages.
+Interestingly, by leveraging the power of the SafeGraph data,
+which reports the estimated per-restaurant customer visits (#Visits),
+we concluded that restaurants that displayed more AI-generated
+fake reviews totaled fewer customer visits (-138, 𝑝<.05). To the best
+9
+
+of our knowledge, this study represents the first analysis leverag-
+ing real users’ visits to describe how fake reviews correlate with
+customer visits in the hospitality sector. Also, this finding raises
+novel research questions that aim to investigate the influence of
+fabricated reviews on business performance. This research direc-
+tion is motivated by the need to gain a deeper understanding of
+the potential effects of fake reviews on consumer behavior, which
+can inform business strategies and policies to promote fairness and
+transparency in online marketplaces.
+Finally, we inspected the writing style of the two predicted re-
+view categories. As for perplexity-based metrics, our results sug-
+gest that perplexity exhibits a downtrend pattern when applied
+to sequential thresholds of classification 𝑡. Specifically, our find-
+ings indicated that at 𝑡<.7, the mean Perplexity of predicted fake
+AI-generated reviews was higher than for human-generated text
+(𝑝<.01), whereas it was lower at 𝑡>.7 (𝑝<.05). Additionally, Textual
+Coherence was not found to be statistically significant at any thresh-
+old. The pattern of Perplexity may be explained by analyzing how
+large language models (LLM) are developed and generate text. LLM
+(including ChatGPT) are trained by predicting the next most likely
+token in a sequence of words, minimizing textual perplexity, and
+are more likely to output common words instead of rare words
+[26]. Thus, it is reasonable to assume that AI-generated texts have
+lower perplexity in comparison to human-generated ones, meaning
+that LLM demonstrate reduced uncertainty in generating text. In
+other words, perplexity may reflect the likelihood of a text being
+machine-generated, with lower values indicating a higher proba-
+bility of machine generation. In connection with this, our study
+reports a statistically significant downward trend in Perplexity for
+AI-generated text across all thresholds 𝑡(see Figure 5). Here, higher
+values of 𝑡can be interpreted as a higher level of confidence in clas-
+sifying text as AI-generated. Therefore, we hypothesize that as our
+confidence in classification increases, the likelihood of misclassify-
+ing an AI-generated text decreases, thus leading to lower perplexity.
+Our findings are consistent with this hypothesis. In practical terms,
+AI-generated reviews exhibit greater grammatical correctness and
+predictability, yet they may lack word originality and creativity, as
+well as potentially be repetitive.
+Next, as for readability-based, we showed that AI-generated
+reviews bear a higher degree of comprehension, necessitating a
+lower educational grade to be understood, as measured by ARI (-
+.23, 𝑝<.001) and #DW (-3.94, 𝑝<.001). These findings are congruent
+with [22], but different from [91]. Specifically, predicted human-
+generated reviews and AI-generated reviews score ARI values of
+7.05 and 6.82, respectively, meaning that they can be understood
+by average 7th and 6th-grade US students, respectively. According
+to [1], written content that is easily comprehensible can reduce the
+cognitive load on readers’ information processing capabilities. As a
+result, such content may attract a larger readership and positively
+affect the perceived helpfulness of reviews. Based on this premise
+and on our results, we hypothesize that AI-generated fake reviews
+may capture readers’ attention more effectively than authentic
+human-written reviews. Consequently, we warn that the prevalence
+of fake reviews may bias consumers’ perceptions and intentions to
+visit a restaurant that has published more fake content relative to
+one that has not.
+As for sentiment, aligned with [4, 44, 91], AI-generated fake
+reviews presented a more positive tone (Sentiment, +.24, 𝑝<.001).
+Here, review spammers may be deliberately employed to alter cus-
+tomers’ perceptions by using exaggerated language that translates
+into more polarized sentiment polarities [59], because spammers
+are presumably not able to express true sentiment when writing
+[44]. Based on our research findings, we conjecture that a more
+positive tone may be a signal of self-promoting activities. This is
+congruent with our previous result that AI-generated fake reviews
+tend to have higher average ratings (+.43, 𝑝<.001), as both variables
+are closely intertwined in the effect they measure.
+This study is not without limitations. Firstly, we restricted the
+analysis to the city of New York to avoid sampling biases. How-
+ever, we cannot conclude whether the results can be generalized
+to other areas. Secondly, we relied on the SafeGraph dataset to
+collect restaurant reviews. Yet, SafeGraph does not disclose the ex-
+act data collection methodology for selecting example restaurants,
+leaving us with uncertainty about the representativeness of the
+dataset. Thirdly, we only relied on 2021 and 2022 inferential data,
+because GPT-3 models were proprietarily beta-released in mid-2020
+[8]. However, years 2021 and early 2022 were still affected by the
+COVID-19 pandemic, thus weakening our results as compared to
+ordinary years, as local lockdowns may have been imposed by
+New York authorities, potentially changing customers’ behavior.
+It may be reasonable to point out that results about the number
+of customers’ visits may be subjected to changes during ordinary
+times. Fourthly, we highlight that when filtering out reviews at
+𝑡=.99 only about 130 AI-generated fake reviews were singled out.
+This data limitation reduced statistical power in ANOVA. Lastly
+and importantly, we do not intend to provide any causal interpreta-
+tion to the results found, thus limiting us in drawing cause-effect
+conclusions. This research should be referenced to describe pat-
+terns across the variables considered and their relationship with
+predicted fake AI-generated and genuine reviews.
+6
+CONCLUSION
+Disseminating fake reviews with LLMs such as ChatGPT has be-
+come easier and cheaper than ever. Such accessibility may amplify
+the proliferation of "AI crowdturfing" campaigns aimed at distort-
+ing user experiences on social media. This study proves that AI-
+generated fake reviews are becoming more sophisticated and can
+easily deceive readers. Therefore, it is imperative for policymakers
+to develop regulations that require online review platforms to imple-
+ment tools and processes to detect and remove fake reviews. This
+research also underscores the need for online review platforms
+to invest in better detection tools for AI-generated text. As the
+technology used to generate fake reviews becomes more advanced,
+review platforms must keep pace with technological advancements
+to ensure they can detect and remove such content effectively. To
+combat this issue, we implemented AI-based detection and descrip-
+tion of fake AI-generated content across review-based, user-based,
+restaurant-based, and writing-based variables, showing that fake
+reviews tend to have a higher rating, that users posting more AI-
+generated content have less established Yelp reputations, and that
+such AI-generated content is easier to understand as compared
+to the human-generated one. Notably, without providing causal
+10
+
+claims, we also described how restaurants displaying more fake
+content are subjected to fewer customer visits. Up to now, no study
+has investigated how fake reviews correlate with customer visits.
+Thus, we intend to open novel research questions in this direction.
+ACKNOWLEDGMENTS
+This work was funded by Fundação para a Ciência e a Tecnolo-
+gia (UID/ECO/00124/2019, UIDB/00124/2020 and Social Sciences
+DataLab, PINFRA/22209/2016), POR Lisboa and POR Norte (So-
+cial Sciences DataLab, PINFRA/22209/2016), and by Oracle via the
+Oracle for Research Grant providing the hardware infrastructure.
+REFERENCES
+[1] Arpita Agnihotri and Saurabh Bhattacharya. 2016. Online review helpfulness:
+Role of qualitative factors. Psychology & Marketing 33, 11 (2016), 1006–1017.
+[2] Eric T Anderson and Duncan I Simester. 2014. Reviews without a purchase:
+Low ratings, loyal customers, and deception. Journal of Marketing Research 51,
+3 (2014), 249–269.
+[3] Snehasish Banerjee and Alton Y.K. Chua. 2014. Applauses in Hotel Reviews:
+Genuine or Deceptive?. In Proceedings of 2014 Science and Information Conference.
+IEEE, London, UK, 938–942.
+[4] Snehasish Banerjee and Alton YK Chua. 2014. A theoretical framework to
+identify authentic online reviews. Online Information Review 38, 5 (2014), 634–
+649.
+[5] Rodrigo Barbado, Oscar Araque, and Carlos A Iglesias. 2019. A framework
+for fake review detection in online consumer electronics retailers. Information
+Processing & Management 56, 4 (2019), 1234–1244.
+[6] Sid Black, Gao Leo, Phil Wang, Connor Leahy, and Stella Biderman. 2021. GPT-
+Neo: Large Scale Autoregressive Language Modeling with Mesh-Tensorflow. https:
+//doi.org/10.5281/zenodo.5297715
+[7] Leo Breiman. 2001. Random Forests. Machine Learning 45, 1 (2001), 5–32.
+[8] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan,
+Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan,
+Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, Chris
+Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess,
+Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever,
+and Dario Amodei. 2020. Language Models are Few-Shot Learners. In Advances
+in Neural Information Processing Systems, H. Larochelle, M. Ranzato, R. Hadsell,
+M.F. Balcan, and H. Lin (Eds.), Vol. 33. Curran Associates, Inc., 1877–1901.
+[9] Qing Cao, Wenjing Duan, and Qiwei Gan. 2011. Exploring determinants of
+voting for the “helpfulness” of online user reviews: A text mining approach.
+Decision Support Systems 50, 2 (2011), 511–521.
+[10] Ting Chang, Yingjie Hu, Dane Taylor, and Brian M. Quigley. 2022. The role
+of alcohol outlet visits derived from mobile phone location data in enhancing
+domestic violence prediction at the neighborhood level. Health & Place 73 (2022),
+102736.
+[11] Ben Charoenwong, Alan Kwan, and Vesa Pursiainen. 2020. Social connections
+with COVID-19–affected areas increase compliance with mobility restrictions.
+Science Advances 6, 47 (2020), eabc3054.
+[12] Tianqi Chen and Carlos Guestrin. 2016. XGBoost: A Scalable Tree Boosting
+System. In Proceedings of the 22nd ACM SIGKDD International Conference on
+Knowledge Discovery and Data Mining (San Francisco, California, USA) (KDD
+’16). ACM, New York, NY, USA, 785–794.
+[13] Michael Crawford, M. Taghi Khoshgoftaar, D. Joseph Prusa, N. Aaron Richter,
+and Hamzah Al Najada. 2015. Survey of review spam detection using machine
+learning techniques. Journal of Big Data 2, 23 (2015).
+[14] Edgar Dale and Jeanne S Chall. 1948. A formula for predicting readability:
+Instructions. Educational research bulletin (1948), 37–54.
+[15] David C DeAndrea, Brandon Van Der Heide, Megan A Vendemia, and Mao H
+Vang. 2018. How people evaluate online reviews. Communication Research 45,
+5 (2018), 719–736.
+[16] Vera Demberg and Frank Keller. 2008. Data from eye-tracking corpora as
+evidence for theories of syntactic processing complexity. Cognition 109, 2 (2008),
+193–210.
+[17] Wenjing Duan, Bin Gu, and Andrew B. Whinston. 2008. Do online reviews
+matter? — An empirical investigation of panel data. Decision Support Systems
+45, 4 (2008), 1007–1016.
+[18] Raffaele Filieri, Salma Alguezaui, and Fraser McLeay. 2015. Why do travelers
+trust TripAdvisor? Antecedents of trust towards consumer-generated media
+and its influence on recommendation adoption and word of mouth. Tourism
+management 51 (2015), 174–185.
+[19] Joshua Fogel and Samson Zachariah. 2017. Intentions to use the yelp review
+website and purchase behavior after reading reviews. Journal of theoretical and
+applied electronic commerce research 12, 1 (2017), 53–67.
+[20] Leo Gao, Stella Biderman, Sid Black, Laurence Golding, Travis Hoppe, Charles
+Foster, Jason Phang, Horace He, Anish Thite, Noa Nabeshima, et al. 2020. The
+Pile: An 800GB Dataset of Diverse Text for Language Modeling. arXiv preprint
+arXiv:2101.00027 (2020).
+[21] Stefan Gössling, C Michael Hall, and Ann-Christin Andersson. 2018. The man-
+ager’s dilemma: a conceptualization of online review manipulation strategies.
+Current Issues in Tourism 21, 5 (2018), 484–503.
+[22] Christopher Glenn Harris. 2012. Detecting deceptive opinion spam using human
+computation. In Workshops at the Twenty-Sixth AAAI Conference on Artificial
+Intelligence.
+[23] Jochen Hartmann, Mark Heitmann, Christian Siebert, and Christina Schamp.
+2022. More than a feeling: Accuracy and Application of Sentiment Analysis.
+International Journal of Research in Marketing (2022).
+[24] Mohamad Hazim, Nor Badrul Anuar, Mohd Faizal Ab Razak, and Nor Aniza
+Abdullah. 2018. Detecting opinion spams through supervised boosting approach.
+PloS one 13, 6 (2018), e0198884.
+[25] Haoyu He, Hengfang Deng, Qi Wang, and Jianxi Gao. 2022. Percolation of
+temporal hierarchical mobility networks during COVID-19. Philosophical Trans-
+actions of the Royal Society A: Mathematical, Physical and Engineering Sciences
+380, 2214 (2022), 20210116.
+[26] Melissa Heikkilä. 2022. How to spot AI-generated text. Retrieved April 7, 2023
+from https://www.technologyreview.com/2022/12/19/1065596/how-to-spot-ai-
+generated-text/
+[27] Brian Heredia, Taghi M Khoshgoftaar, Joseph D Prusa, and Michael Crawford.
+2017. Improving detection of untrustworthy online reviews using ensemble
+learners combined with feature selection. Social Network Analysis and Mining 7
+(2017), 1–18.
+[28] Nan Hu, Indranil Bose, Yunjun Gao, and Ling Liu. 2011. Manipulation in digital
+word-of-mouth: A reality check for book reviews. Decision Support Systems 50,
+3 (2011), 627–635.
+[29] Nan Hu, Indranil Bose, Noi Sian Koh, and Ling Liu. 2012. Manipulation of online
+reviews: An analysis of ratings, readability, and sentiments. Decision Support
+Systems 52, 3 (2012), 674–684.
+[30] Nan Hu, Ling Liu, and Jie Jennifer Zhang. 2008. Do online reviews affect product
+sales? The role of reviewer characteristics and temporal effects. Information
+Technology and Management 9 (2008), 201–214.
+[31] Yingjie Hu, Brian M. Quigley, and Dane Taylor. 2021. Human mobility data
+and machine learning reveal geographic differences in alcohol sales and alcohol
+outlet visits across U.S. states during COVID-19. PLOS ONE 16, 12 (12 2021),
+1–27.
+[32] Kate Mathews Hunt. 2015. Gaming the system: Fake online reviews v. consumer
+law. Computer law & security review 31, 1 (2015), 3–25.
+[33] Athirai A. Irissappane, Hanfei Yu, Yankun Shen, Anubha Agrawal, and Gray Stan-
+ton. 2020. Leveraging GPT-2 for Classifying Spam Reviews with Limited Labeled
+Data via Adversarial Training. CoRR abs/2012.13400 (2020). arXiv:2012.13400
+[34] Nitin Jindal and Bing Liu. 2008. Opinion Spam and Analysis. In Proceedings of
+the 2008 International Conference on Web Search and Data Mining (Palo Alto,
+California, USA) (WSDM ’08). Association for Computing Machinery, New York,
+NY, USA, 219–230.
+[35] Daniel Kahneman and Amos Tversky. 1972. Subjective probability: A judgment
+of representativeness. Cognitive psychology 3, 3 (1972), 430–454.
+[36] Faisal Khurshid, Yan Zhu, Zhuang Xu, Mushtaq Ahmad, and Muqeet Ahmad.
+2019. Enactment of ensemble learning for review spam detection on selected
+features. International Journal of Computational Intelligence Systems 12, 1 (2019),
+387–394.
+[37] Nikos Korfiatis, Daniel Rodriguez, and M. Sicilia. 2008. The Impact of Readability
+on the Usefulness of Online Product Reviews: A Case Study on an Online
+Bookstore. 423–432.
+[38] Philippe Laban, Luke Dai, Lucas Bandarkar, and Marti A. Hearst. 2021. Can
+Transformer Models Measure Coherence In Text: Re-Thinking the Shuffle Test.
+In Proceedings of the 59th Annual Meeting of the Association for Computational
+Linguistics and the 11th International Joint Conference on Natural Language
+Processing (Volume 2: Short Papers). Association for Computational Linguistics,
+Online, 1058–1064.
+[39] Theodoros Lappas, Gaurav Sabnis, and Georgios Valkanas. 2016. The impact
+of fake reviews on online visibility: A vulnerability assessment of the hotel
+industry. Information Systems Research 27, 4 (2016), 940–961.
+[40] Shun-Yang Lee, Liangfei Qiu, and Andrew Whinston. 2018. Sentiment manipula-
+tion in online platforms: An analysis of movie tweets. Production and Operations
+Management 27, 3 (2018), 393–416.
+[41] Fangtao Huang Li, Minlie Huang, Yi Yang, and Xiaoyan Zhu. 2011. Learning to
+identify review spam. In Twenty-second international joint conference on artificial
+intelligence.
+[42] Mengxiang Li, Liqiang Huang, Chuan-Hoo Tan, and Kwok-Kee Wei. 2013. Help-
+fulness of online product reviews as seen by consumers: Source and content
+11
+
+features. International Journal of Electronic Commerce 17, 4 (2013), 101–136.
+[43] Veronica Liljander, Johanna Gummerus, and Magnus Söderlund. 2015. Young
+consumers’ responses to suspected covert and overt blog marketing. Internet
+Research (2015).
+[44] Yuanchao Liu and Bo Pang. 2018. A unified framework for detecting author
+spamicity by modeling review deviation. Expert Systems with Applications 112
+(2018), 148–155.
+[45] Yuanchao Liu, Bo Pang, and Xiaolong Wang. 2019. Opinion spam detection by
+incorporating multimodal embedded representation into a probabilistic review
+graph. Neurocomputing 366 (2019), 276–283.
+[46] Ilya Loshchilov and Frank Hutter. 2017. Fixing Weight Decay Regularization in
+Adam. (2017). arXiv:1711.05101
+[47] Michael Luca. 2016. Reviews, reputation, and revenue: The case of Yelp. com.
+Com (March 15, 2016). Harvard Business School NOM Unit Working Paper 12-016
+(2016).
+[48] Michael Luca and Georgios Zervas. 2016. Fake It Till You Make It: Reputation,
+Competition, and Yelp Review Fraud. Management Science 62, 12 (2016), 3412–
+3427.
+[49] Yoon Jin Ma and Hyun-Hwa Lee. 2014. Consumer responses toward online
+review manipulation. Journal of Research in Interactive Marketing 8, 3 (2014),
+224–244.
+[50] Christopher D. Manning, Prabhakar Raghavan, and Hinrich Schütze. 2008. In-
+troduction to Information Retrieval. Cambridge University Press, USA.
+[51] Jonathan Marciano. 2021. Fake online reviews cost $152 billion a year. Here’s
+how e-commerce sites can stop them. World Economic Forum.
+Retrieved
+January 7, 2023 from https://www.weforum.org/agenda/2021/08/fake-online-
+reviews-are-a-152-billion-problem-heres-how-to-silence-them/
+[52] Dina Mayzlin, Yaniv Dover, and Judith Chevalier. 2014. Promotional reviews:
+An empirical investigation of online review manipulation. American Economic
+Review 104, 8 (2014), 2421–2455.
+[53] Megan McCluskey. 2022. Inside the War on Fake Consumer Reviews. Time. Re-
+trieved January 7, 2023 from https://time.com/6192933/fake-reviews-regulation/
+[54] Andreas Munzel. 2016. Assisting consumers in detecting fake reviews: The
+role of identity information disclosure and consensus. Journal of Retailing and
+Consumer Services 32 (2016), 96–108.
+[55] OpenAI. 2023. GPT-4 Technical Report. arXiv:2303.08774 [cs.CL]
+[56] Myle Ott, Claire Cardie, and Jeff Hancock. 2012. Estimating the Prevalence of
+Deception in Online Review Communities. In Proceedings of the 21st International
+Conference on World Wide Web (Lyon, France) (WWW ’12). Association for
+Computing Machinery, New York, NY, USA, 201–210.
+[57] Myle Ott, Claire Cardie, and Jeffrey T Hancock. 2013. Negative deceptive opinion
+spam. In Proceedings of the 2013 conference of the north american chapter of the
+association for computational linguistics: human language technologies. 497–501.
+[58] Myle Ott, Yejin Choi, Claire Cardie, and Jeffrey T. Hancock. 2011. Finding
+Deceptive Opinion Spam by Any Stretch of the Imagination. In Proceedings of
+the 49th Annual Meeting of the Association for Computational Linguistics: Human
+Language Technologies. Association for Computational Linguistics, Portland,
+Oregon, USA, 309–319.
+[59] Himangshu Paul and Alexander Nikolaev. 2021. Fake Review Detection on
+Online E-Commerce Platforms: A Systematic Literature Review. Data Mining
+and Knowledge Discovery 35, 5 (2021), 1830–1881.
+[60] Daria Plotkina, Andreas Munzel, and Jessie Pallud. 2020.
+Illusions of
+truth—Experimental insights into human and algorithmic detections of fake
+online reviews. Journal of Business Research 109 (2020), 511–523.
+[61] Alec Radford, Karthik Narasimhan, Tim Salimans, and Ilya Sutskever. 2018.
+Improving language understanding by generative pre-training. (2018).
+[62] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, Ilya
+Sutskever, et al. 2019. Language models are unsupervised multitask learners.
+OpenAI blog 1, 8 (2019), 9.
+[63] Shebuti Rayana and Leman Akoglu. 2015. Collective Opinion Spam Detec-
+tion: Bridging Review Networks and Metadata. In Proceedings of the 21th ACM
+SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD
+’15). Association for Computing Machinery, New York, NY, USA, 985–994.
+[64] Yafeng Ren and Donghong Ji. 2017. Neural networks for deceptive opinion
+spam detection: An empirical study. Information Sciences 385 (2017), 213–224.
+[65] Joni Salminen, Chandrashekhar Kandpal, Ahmed Mohamed Kamel, Soon-gyo
+Jung, and Bernard J Jansen. 2022. Creating and detecting fake reviews of online
+products. Journal of Retailing and Consumer Services 64 (2022), 102771.
+[66] Vlad Sandulescu and Martin Ester. 2015. Detecting singleton review spammers
+using semantic similarity. In Proceedings of the 24th international conference on
+World Wide Web. 971–976.
+[67] Robert M Schindler and Barbara Bickart. 2012. Perceived helpfulness of online
+consumer reviews: The role of message content and style. Journal of Consumer
+Behaviour 11, 3 (2012), 234–243.
+[68] Rico Sennrich, Barry Haddow, and Alexandra Birch. 2015. Neural machine
+translation of rare words with subword units. arXiv preprint arXiv:1508.07909
+(2015).
+[69] RJ Senter and Edgar A Smith. 1967. Automated readability index. Technical
+Report. Cincinnati Univ OH.
+[70] Niklas Smedemark-Margulies, Robin Walters, Heiko Zimmermann, Lucas Laird,
+Christian van der Loo, Neela Kaushik, Rajmonda Caceres, and Jan-Willem van de
+Meent. 2022. Probabilistic program inference in network-based epidemiological
+simulations. PLOS Computational Biology 18, 11 (2022), 1–40.
+[71] Irene Solaiman, Miles Brundage, Jack Clark, Amanda Askell, Ariel Herbert-Voss,
+Jeff Wu, Alec Radford, Gretchen Krueger, Jong Wook Kim, Sarah Kreps, et al.
+2019. Release strategies and the social impacts of language models. (2019).
+arXiv:1908.09203.
+[72] Wonho Song, Sangkon Park, and Doojin Ryu. 2017. Information quality of
+online reviews in the presence of potentially fake reviews. Korean Economic
+Review 33 (2017), 5–34.
+[73] Periakaruppan Sudhakaran, Shanmugasundaram Hariharan, and Joan Lu. 2016.
+A framework investigating the online user reviews to measure the biasness
+for sentiment analysis. Asian Journal of Information Technology 15, 12 (2016),
+1890–1898.
+[74] Huan Sun, Alex Morales, and Xifeng Yan. 2013. Synthetic review spamming
+and defense. In Proceedings of the 19th ACM SIGKDD international conference on
+Knowledge discovery and data mining. 1088–1096.
+[75] Jenny Sussin and Ed Thompson. 2012. The consequences of fake fans,‘Likes’
+and reviews on social networks. Gartner Research 2091515 (2012).
+[76] Tanya (Ya) Tang, Eric (Er) Fang, and Feng Wang. 2014. Is Neutral Really Neutral?
+The Effects of Neutral User-Generated Content on Product Sales. Journal of
+Marketing 78, 4 (2014), 41–58.
+[77] Ramendra Thakur, Dena Hale, and John H Summey. 2018. What motivates
+consumers to partake in cyber shilling? Journal of Marketing Theory and Practice
+26, 1-2 (2018), 181–195.
+[78] Tripadvisor. 2021. Review Transparency Report. Retrieved January 7, 2023 from
+https://www.tripadvisor.com/InfoCenterV6?ctr=transparency_report_2021
+[79] Prasad Vana and Anja Lambrecht. 2021. The Effect of Individual Online Reviews
+on Purchase Likelihood. Marketing Science 40, 4 (2021), 708–730.
+[80] Camilla Vásquez. 2014. The discourse of online consumer reviews. Bloomsbury
+Publishing.
+[81] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+Aidan N Gomez, Ł ukasz Kaiser, and Illia Polosukhin. 2017. Attention is All you
+Need. In Advances in Neural Information Processing Systems, I. Guyon, U. Von
+Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett
+(Eds.), Vol. 30. Curran Associates, Inc.
+[82] Eka Dyar Wahyuni and Arif Djunaidy. 2016. Fake review detection from a
+product review using modified method of iterative computation framework. In
+MATEC web of conferences, Vol. 58. EDP Sciences, 03003.
+[83] Yun Wan and Makoto Nakayama. 2014. The reliability of online review helpful-
+ness. Journal of Electronic Commerce Research 15, 3 (2014), 179.
+[84] Cuicui Wang, Yun Li, Xuan Luo, Qingguo Ma, Weizhong Fu, and Huijian Fu.
+2018. The effects of money on fake rating behavior in e-commerce: Electro-
+physiological time course evidence from consumers. Frontiers in neuroscience
+12 (2018), 156.
+[85] Yuan Wang and Minghe Guo. 2014. A Short Analysis of Discourse Coherence.
+Journal of Language Teaching and Research 5 (03 2014).
+[86] Zhuo Wang, Songmin Gu, and Xiaowei Xu. 2018. GSLDA: LDA-based group
+spamming detection in product reviews. Applied Intelligence 48 (2018), 3094–
+3107.
+[87] Yuanyuan Wu, Eric W.T. Ngai, Pengkun Wu, and Chong Wu. 2020. Fake online
+reviews: Literature review, synthesis, and directions for future research. Decision
+Support Systems 132 (2020), 113280. https://www.sciencedirect.com/science/
+article/pii/S016792362030035X
+[88] Sihong Xie, Guan Wang, Shuyang Lin, and Philip S Yu. 2012. Review spam
+detection via temporal pattern discovery. In Proceedings of the 18th ACM SIGKDD
+international conference on Knowledge discovery and data mining. 823–831.
+[89] Yukuan Xu, Zili Zhang, Rob Law, and Ziqiong Zhang. 2020. Effects of online
+reviews and managerial responses from a review manipulation perspective.
+Current Issues in Tourism 23, 17 (2020), 2207–2222.
+[90] Yuanshun Yao, Bimal Viswanath, Jenna Cryan, Haitao Zheng, and Ben Y. Zhao.
+2017. Automated Crowdturfing Attacks and Defenses in Online Review Systems.
+In Proceedings of the 2017 ACM SIGSAC Conference on Computer and Commu-
+nications Security (Dallas, Texas, USA) (CCS ’17). Association for Computing
+Machinery, New York, NY, USA, 1143–1158.
+[91] Kyung-Hyan Yoo and Ulrike Gretzel. 2009. Comparison of Deceptive and
+Truthful Travel Reviews. In Information and Communication Technologies in
+Tourism 2009, Wolfram Höpken, Ulrike Gretzel, and Rob Law (Eds.). Springer
+Vienna, Vienna, 37–47.
+[92] W. J. Youden. 1950. Index for rating diagnostic tests. Cancer 3, 1 (1950), 32–35.
+[93] Dongsong Zhang, Lina Zhou, Juan Luo Kehoe, and Isil Yakut Kilic. 2016. What
+online reviewer behaviors really matter? Effects of verbal and nonverbal behav-
+iors on detection of fake online reviews. Journal of Management Information
+Systems 33, 2 (2016), 456–481.
+12
+
+[94] Jurui Zhang. 2019. What’s yours is mine: exploring customer voice on Airbnb
+using text-mining approaches. Journal of Consumer Marketing (2019).
+[95] Lu Zhang, Zhiang Wu, and Jie Cao. 2017. Detecting spammer groups from
+product reviews: a partially supervised learning model. IEEE Access 6 (2017),
+2559–2568.
+[96] Mengxia Zhang and Lan Luo. 2022. Can Consumer-Posted Photos Serve as a
+Leading Indicator of Restaurant Survival? Evidence from Yelp. Management
+Science (2022).
+[97] Tao Zhang, Gang Li, TCE Cheng, and Kin Keung Lai. 2017. Welfare econom-
+ics of review information: Implications for the online selling platform owner.
+International Journal of Production Economics 184 (2017), 69–79.
+[98] Wen Zhang, Yuhang Du, Taketoshi Yoshida, and Qing Wang. 2018. DRI-RCNN:
+An approach to deceptive review identification using recurrent convolutional
+neural network. Information Processing & Management 54, 4 (2018), 576–592.
+[99] Yi Zhao, Sha Yang, Vishal Narayan, and Ying Zhao. 2013. Modeling consumer
+learning from online product reviews. Marketing science 32, 1 (2013), 153–169.
+[100] Mengzhou Zhuang, Geng Cui, and Ling Peng. 2018. Manufactured opinions:
+The effect of manipulating online product reviews. Journal of Business Research
+87 (2018), 24–35.
+A
+REPLICATION CODE
+Detailed replication code for the modeling part is provided at
+https://github.com/iamalegambetti/combat-ai-restaurants.git. Ex-
+periments notebooks are included to quickly document model per-
+formance.
+13

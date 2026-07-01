@@ -1,0 +1,1077 @@
+January 2022
+Target space entanglement in a matrix model for the bubbling geometry
+Asato Tsuchiya∗and Kazushi Yamashiro†
+Department of Physics, Shizuoka University
+836 Ohya, Suruga-ku, Shizuoka 422-8529, Japan
+Graduate School of Science and Technology, Shizuoka University
+836 Ohya, Suruga-ku, Shizuoka 422-8529, Japan
+Abstract
+We study the target space entanglement entropy in a complex matrix model that describes
+the chiral primary sector in N = 4 super Yang-Mills theory, which is associated with the
+bubbling AdS geometry. The target space for the matrix model is a two-dimensional plane
+where the eigenvalues of the complex matrix distribute.
+The eigenvalues are viewed as the
+position coordinates of fermions, and the eigenvalue distribution corresponds to a droplet formed
+by the fermions. The droplet is identiﬁed with one that speciﬁes a boundary condition in the
+bubbling geometry. We consider states in the matrix model that correspond to AdS5 × S5, an
+AdS giant graviton and a giant graviton in the bubbling geometry. We calculate the target
+space entanglement entropy of a subregion for each of the states in the matrix model as well
+as the area of the boundary of the subregion in the bubbling geometry, and ﬁnd a qualitative
+agreement between them.
+∗e-mail address : tsuchiya.asato@shizuoka.ac.jp
+†e-mail address : yamashiro.kazushi.17@shizuoka.ac.jp
+arXiv:2201.06871v3  [hep-th]  28 Apr 2022
+
+1
+Introduction
+It has been recognized that quantum entanglement plays a crucial role in constructing a quantum
+theory of gravity. As seen typically in the Ryu-Takayanagi formula [1], quantum entanglement has
+information on geometry of space-time. The formula tells that when the space where a ﬁeld theory
+is deﬁned is divided into a subregion and its complement, the entanglement entropy of the subregion
+is proportional to the area of minimal surface in the bulk whose boundary agrees with that of the
+subregion. The entanglement entropy in the formula is here called the base space entanglement
+entropy.
+Recently, a new type of quantum entanglement entropy in ﬁeld theories which is called the
+target space entanglement entropy has been investigated in the context of the gauge/gravity cor-
+respondence [2–7]. It is deﬁned by dividing the conﬁguration space of ﬁelds into a subregion and
+its complement. In particular, the target space entanglement entropy can be deﬁned in (0 + 1)-
+dimensional ﬁeld theory, namely quantum mechanics, although the base space entanglement en-
+tropy cannot be deﬁned there. For instance, in matrix quantum mechanics, the target space is
+identiﬁed with a space where the eigenvalues of the matrix distribute. It is nontrivial to deﬁne
+entanglement entropy in gravitational theories because of division of dynamical spaces. It has been
+conjectured in [3] that in the gauge/gravity correspondence, the entanglement entropy in the bulk
+on the gravity side can be deﬁned by the target space entanglement entropy on the gauge theory
+side. In particular, the target space entanglement entropy of a subregion in the D0-brane quantum
+mechanics [8] is expected to be proportional with factor of proportionality 1/4GN to the area of
+boundary of the corresponding subregion in the bulk on the gravity side.
+In this paper, we study this issue in the D3-brane holography, namely a conjectured corre-
+spondence between N = 4 super Yang-Mills theory (SYM) and type IIB superstring theory on
+AdS5 × S5 [9–11]. Here we focus on a correspondence between the chiral primary sector and the
+bubbling AdS geometry [12–14]. The chiral primary sector can be described by a complex matrix
+model [15] whose target space is a two-dimensional plane where the eigenvalues of the complex
+matrix distribute (see also [16]). The eigenvalues can be viewed as the position coordinates of
+fermions in the harmonic oscillator potential in the two-dimensional plane, and the eigenvalue dis-
+tribution corresponds to a droplet formed by the fermions. The target space can be identiﬁed with
+a two-dimensional plane in the bubbling geometry where a boundary condition for a function that
+determines a half-BPS solution with R × SO(4) × SO(4) symmetry in type IIB supergravity is
+speciﬁed by giving a droplet. We calculate the target space entanglement entropy of a subregion
+in the two-dimensional plane for each of states that are speciﬁed by droplets corresponding to
+AdS × S5, an AdS giant graviton and a giant graviton as well as the area (length) of boundary of
+the corresponding subregion in the bubbling geometry. We ﬁnd a qualitative agreement between
+the target space entanglement entropy and the area.
+1
+
+This paper is organized as follows. In section 2, we review some materials that we will need in
+this paper: a complex matrix model that describes the chiral primary sector in N = 4 SYM on
+R × S3, the bubbling AdS geometry, and the target space entanglement entropy. In section 3, we
+calculate the entanglement entropy in the complex matrix model. In section 4, we calculate the area
+of boundary in the bubbling geometry and compare it with the target space entanglement entropy.
+Section 5 is devoted to conclusion and discussion. In appendices, some details are gathered.
+2
+Review
+2.1
+Complex matrix model and fermions in two-dimensional plane
+In this subsection, we review a complex matrix model that describes the chiral primary sector of
+N = 4 SYM on R × S3. The chiral primary operators take the form
+OJ1,J2,··· ,JK(t) =
+K
+Y
+a=1
+Tr(ZJa) ,
+(2.1)
+where Z =
+1
+√
+2(φ1+iφ2) with φ1 and φ2 being two of six scalars in N = 4 SYM. These operators are
+half-BPS holomorphic operators. Kaluza-Klein gravitons, AdS giant gravitons and giant gravitons
+on the gravity side are represented in terms of a linear combination of the operators (2.1). It was
+shown in [15] that the dynamics of the operators is described by a complex matrix model which is
+obtained by dimensionally reducing the free part of the action for Z on R × S3 to R. The complex
+matrix model is a matrix quantum mechanics deﬁned by
+Z =
+Z
+[dZ(t)dZ†(t)]eiS ,
+S =
+Z
+dtTr( ˙Z(t) ˙Z†(t) −Z(t)Z†(t)) =
+Z
+dt
+X
+i,j
+( ˙Z(t)ij ˙Z∗(t)ij −Z(t)ijZ∗(t)ij) ,
+(2.2)
+where Z(t) is an N × N complex matrix depending on the time, and the path integral measure is
+deﬁned by a norm in matrix conﬁguration space,
+||dZ(t)||2 = 2Tr(dZ(t)dZ†(t)) = 2
+X
+i,j
+dZ(t)ijdZ∗(t)ij .
+(2.3)
+The potential term in the action comes from the coupling of the conformal matter to the curvature
+of S3. We have rescaled the ﬁeld and the time appropriately.
+The hamiltonian is given by
+ˆH =
+X
+i,j
+ 
+−
+∂
+∂Zij∂Z∗
+ij
++ ZijZ∗
+ij
+!
+.
+(2.4)
+2
+
+The normalized wave function of the ground state is given by
+χ0 =
+1
+π
+N2
+2
+e−Tr(ZZ†) =
+1
+π
+N2
+2
+eΣi,jZijZ∗
+ij ,
+(2.5)
+and the wave functions of excited states that correspond to the chiral primary states are given by
+χ(J1,··· ,JK) =
+ K
+Y
+a=1
+Tr(ZJa)
+!
+χ0 .
+(2.6)
+The energy eigenvalues of these states are N2 + ΣK
+a=1Ja.
+The complex matrix Z is decomposed as Z = UTU† in terms of a unitary matrix U and an
+upper triangular matrix T. The eigenvalues of Z are given by zi = Tii (i = 1, · · · , N). The wave
+functions (2.6) are rewritten in terms of zi and Tij (i < j) as
+χ(J1,··· ,JK) =
+ K
+Y
+a=1
+X
+ia
+zJa
+ia
+!
+χ0 ,
+χ0 =
+1
+π
+N2
+2
+e−Σiziz∗
+i −Σj<kTjkT ∗
+jk ,
+(2.7)
+while the path integral measure as
+Z Y
+i,j
+dZijdZ∗
+ij =
+Z Y
+i>j
+dHijdH∗
+ij
+Y
+k<l
+dTkldT ∗
+kl
+Y
+m
+dzmdz∗
+m|∆(z)|2 ,
+(2.8)
+where ∆(z) = Q
+i<j(zi −zj) and dH = −iU†dU. We can absorb ∆(z) into the wave function
+and deﬁne a new wave function χF by χF ≡∆(z)χ. Then, χF is represented as a certain linear
+combination of
+1
+√
+N!
+det(Φli(zj, z∗
+j )) ×
+Y
+j<k
+Φ0(Tjk, T ∗
+jk) ,
+with
+X
+i
+li = N(N −1)
+2
++
+K
+X
+a=1
+Ja ,
+(2.9)
+where Φl(z, z∗) are the wave function of the lowest Landau level which takes the form
+Φl(z, z∗) =
+r
+2l
+l!πzle−zz∗.
+(2.10)
+As reviewed in appendix A, the wave function Φ(z, z∗) can be viewed as a wave function of the
+holomorphic sector for a particle in the harmonic oscillator potential in two-dimensional plane.
+(2.9) is a wave function for N fermions and 1
+2N(N −1) bosons in the harmonic oscillator potential.
+The eigenvalues zi of Z can be viewed as the coordinates of N fermions and the total energy of
+these fermions is 1
+2N(N + 1) + ΣK
+a=1Ja, where 1
+2N(N + 1) is the energy of the ground state of
+3
+
+(a) AdS5 × S5
+(b) AdS giant graviton
+(c) giant graviton
+(d) AdS5 × S5
+(e) AdS giant graviton
+(f) giant graviton
+Figure 1: (1a), (1b) and (1c) are droplets of the states that correspond to AdS5 ×S5, an AdS giant
+graviton and a giant graviton, respectively. (1d), (1e) and (1f) are the occupied energy levels of
+the states that correspond to AdS5 × S5, an AdS giant graviton and a giant graviton, respectively.
+the fermions. On the other hand, the bosons whose coordinates are (Tij, T ∗
+ij) are always in the
+ground state. Hence, we can integrate out Tij and concentrate on
+1
+√
+N! det(Φli(zj, z∗
+j )) in (2.9). In
+this way, the holomorphic sector of the complex matrix model, which describes the dynamics of
+the operators (2.1), reduces to a system of N fermions in the two-dimensional harmonic oscillator
+potential. For large N, we can view the eigenvalue distribution corresponding to a state as a droplet
+in the complex plane, which is formed by N fermions.
+In what follows, we consider three particular states whose wave functions are given by
+1
+√
+N!
+det(Φli(zj, z∗
+j ))
+(2.11)
+in (2.9). The ﬁrst one is the ground state where l1 = 0, l2 = 1, · · · , lN = N −1. We show
+the corresponding droplet in Fig. 1a and the occupied energy levels in Fig. 1d. This corresponds
+to AdS5 × S5 in the bubbling geometry. The second one is an excited state where l1 = 0, l2 =
+1, · · · , lN = N −1, lN+1 = N + J. Note that the total number of fermions is N + 1. We show the
+corresponding droplet in Fig. 1b and the occupied energy levels in Fig. 1e. This corresponds to a
+bubbling geometry where there exists an AdS giant graviton, which is a D3-brane wrapped on S3
+in AdS5. The third one is an excited state where l1 = 0, l2 = 1, · · · , lN−1−J = N −2 −J, lN−J =
+4
+
+N −J, · · · , lN−1 = N −1. Note that the total number of fermions is N −1. We show the
+corresponding droplet in Fig .1c and the occupied energy levels in Fig. 1f. This corresponds to
+a bubbling geometry where there exists a giant graviton, which is a D3-brane wrapped on S3 in
+S5. The wave function Φl(z, z∗) is localized on a circle centered at the origin with the radius
+√
+l.
+Hence, r0 in Fig. 1a is equal to
+√
+N for large N.
+2.2
+Bubbling geometry
+In this subsection, we review the bubbling geometry developed by Lin, Lunin and Maldacena.
+They gave the general form of half-BPS solutions with R × SO(4) × SO(4) symmetry in type IIB
+supergravity [14]. The metric takes the form
+ds2 = −h−2
+"
+dt +
+2
+X
+i=1
+Vidxi
+#2
++ h2
+"
+dy2 +
+2
+X
+i=1
+dxidxi
+#
++ yeGdΩ2
+3 + ye−Gd˜Ω2
+3 ,
+(2.12)
+where
+h−2 = 2y cosh G,
+z = 1
+2 tanh G,
+y∂yVi = ϵij∂jz,
+y(∂iVj −∂jVi) = ϵij∂yz .
+(2.13)
+The function z(x1, x2, y) completely determines the solutions and obeys a diﬀerential equation
+∂i∂iz + y∂y
+∂yz
+y
+
+= 0 .
+(2.14)
+The function z is ﬁxed by specifying a boundary condition at y = 0. It turns out that z must
+take 1/2 or −1/2 at y = 0. It is convenient to assign ‘black’ to the region with z = −1/2 and
+‘white’ to the region with z = 1/2. In this way, there is a correspondence between divisions of
+the x1 −x2 plane into black and white regions and half-BPS solutions with R × SO(4) × SO(4)
+symmetry. One can identify a two-dimensional plane speciﬁed by y = 0 in the bubbling geometry
+with the target space in the complex matrix model such that black regions correspond to droplets
+in the target space. Figs 1a, 1b and 1c correspond to AdS5 ×S5, an AdS giant graviton and a giant
+graviton, respectively, as mentioned before. Here r0 in Fig.1a is related to the radius of AdS5 as
+r0 = R2
+AdS =
+√
+N.
+2.3
+Target Space Entanglement Entropy
+In this subsection, we brieﬂy review the target space entanglement entropy [2]. For concreteness, we
+consider a quantum mechanics of N identical particles in d dimensions. In this case, the target space
+is the d-dimensional space where N particle reside. We divide the target space into a subregion A
+5
+
+and its complement ¯A. Then, the total Hilbert space H is decomposed as
+H =
+M
+n
+HA,n ⊗H ¯
+A,n ,
+(2.15)
+where n labels a sector where n particles exist in A and N −n particles exist in ¯A. The target
+space entanglement entropy of the subregion A is given by
+SA = −
+X
+n
+pn log pn +
+X
+n
+pnSA,n .
+(2.16)
+The ﬁrst and second terms in the RHS is classical and quantum parts, respectively. Here pn is the
+probability of realization of the sector n, which is given by
+pn =
+N
+n
+ Z
+A
+n
+Y
+a=1
+ddxa
+Z
+¯
+A
+N
+Y
+b=n+1
+ddyb|ψ(⃗x1, · · · ,⃗xn,⃗yn+1, · · · ,⃗yN)|2 .
+(2.17)
+SA,n is interpreted as the entanglement entropy of the subregion A in the sector n, which is given
+by
+SA,n = −trA,nρA,n log ρA,n ,
+(2.18)
+where ρA,n is the reduced density matrix of the sector n and its matrix elements in the coordinate
+basis are given by
+⟨⃗x| ρA,n |⃗x′⟩= 1
+pn
+N
+n
+ Z
+¯
+A
+N
+Y
+b=n+1
+ddybψ(⃗x,⃗y)ψ∗(⃗x′,⃗y) .
+(2.19)
+As a particular example [6], we consider N identical fermions which are not interacting each
+other and the wave function of which is given by a Slater determinant
+ψ(⃗x1, · · ·⃗xN) =
+1
+√
+N!
+det(χi(⃗xj)) ,
+(2.20)
+where χi(⃗x) are orthonormal single-body wave functions:
+Z
+ddxχ∗
+i (⃗x)χj(⃗x) = δij .
+(2.21)
+We introduce an N × N overlap matrix Xij
+Xij ≡
+Z
+A
+ddx χi(⃗x)χ∗
+j(⃗x) ,
+(2.22)
+Xij is a hermitian matrix so that it is diagonalized by a unitary matrix Uij. The eigenvalues of Xij
+6
+
+denoted by λi are given by
+λi =
+Z
+A
+|˜χi(⃗x)2| ,
+(2.23)
+where ˜χi(⃗x) = Uijχj(⃗x). λi is the probability of existence in the region A when the wave function
+for a particle is given by ˜χi(⃗x).
+pn in (2.17) is given by
+pn =
+X
+I∈Fn
+Y
+i∈I
+λi
+Y
+j∈¯I
+(1 −λj) .
+(2.24)
+Here Fn is a set of all subsets of {1, . . . , N} that consist of n elements1. We see that pn is indeed
+the probability that n particles exist in the region A when the probability that each of N particles
+exists in A is given by λi.
+The matrix elements of ρA,n in (2.19) are
+⟨⃗x| ρA,n |⃗x′⟩= 1
+pn
+X
+I∈Fn
+λI¯λIψI(⃗x)ψ∗
+I(⃗x′) ,
+(2.25)
+where we put λI ≡Q
+i∈I λi,
+¯λI ≡Q
+i∈I(1 −λi) for an element I of Fn and introduce a wave
+function for n particles
+ψI =
+1
+√λI
+X
+σ∈Sn
+(−1)σ
+√
+n!
+˜χnσ(1)(⃗x1) · · · ˜χnσ(n)(⃗xn) .
+(2.26)
+The quantum part is calculated as
+N
+X
+n=0
+pnSA,n =
+N
+X
+n=0
+pn log pn −
+N
+X
+n=0
+X
+I∈Fn
+λI¯λI log(λI¯λI) .
+(2.27)
+Thus, we see from (2.25) and (2.27) that the total target space entanglement entropy (2.16) is
+given by
+SA = −
+N
+X
+n=0
+X
+I∈Fn
+λI¯λI log(λI¯λI).
+(2.28)
+By introducing H(λ) ≡−λ log λ −(1 −λ) log(1 −λ), we represent (2.28) as2
+SA =
+N
+X
+i=1
+H(λi) .
+(2.29)
+Here H(λ) is the Shannon entropy for the Bernoulli distribution (λ, 1 −λ).
+1For instance , in the case of N = 3, n = 2, F2 = {{1, 2}, {1, 3}, {2, 3}}.
+2This formula was obtained in [17–19] in the context of condensed matter and statistical physics.
+7
+
+3
+Target Space Entanglement Entropy in the complex matrix
+model
+In this section, we calculate the target space entanglement entropy for the three states in the
+complex matrix model introduced in section 2.1. We consider a circle centered at the origin with
+the radius r as a subregion A. Then, the overlap matrix (2.22) is given by
+Xll′(A) = 2
+Z
+A
+dzdz∗Φl(z, z∗)Φl′(z, z∗)
+= δll′al(r) .
+(3.1)
+Note that this matrix is diagonal and its eigenvalues λl are
+λl = al(r) = γ[l + 1, r2]
+Γ[l + 1]
+.
+(3.2)
+λl is the provability of existence in A of a single particle. Here Γ[x] is the gamma function and
+γ[a, x] is the incomplete gamma function:
+γ[a, x] =
+Z x
+0
+ta−1e−tdt .
+(3.3)
+By using (2.28)3, we obtain the target space entanglement entropy of the subregion A:
+S(r, N) =
+N
+X
+i=1
+H(al(i)(r)),
+H(al(i)(r)) = −al(i)(r) log al(i)(r) −(1 −al(i)(r)) log(1 −al(i)(r)) .
+(3.4)
+First, let us consider the target space entanglement entropy for the ground state indicated in
+Figs.
+1a and 1d, which correspond to AdS5 × S5 in the bubbling geometry.
+In this case, the
+single-body states with l = 0, · · · , N −1 are occupied. Thus, (3.4) is
+S0(r, N) =
+N−1
+X
+l=0
+H(al(r)), H(al(r)) = −al(r) log al(r) −(1 −al(r)) log(1 −al(r)) .
+(3.5)
+In Fig. 2, we plot the target space entanglement entropy S0 for N = 40, 60, 80, 100 against r.
+We see that S0 is proportional to r as S0 = 1.81r when the subregion A is included in the droplet,
+namely r <
+√
+N. This behavior shows that the entanglement entropy is proportional to the area of
+boundary of the subregion A. The fact that S0 = 0 when the droplet is included in the subregion
+A, namely r >
+√
+N, shows that there is no entanglement between inside and outside of A because
+all particles are conﬁned in A. This is a ﬁnite N eﬀect4 .
+3Here we simply consider the full Hilbert space for N fermions in two-dimensional plane in calculating the reduced
+density matrix.
+4In [18], S0 was calculated in the N →∞limit. The result is that S0 = 2
+√
+2πr
+R ∞
+−∞
+dµ
+2π H( 1
+2Erfc(µ)) ∼1.804r for
+8
+
+Figure 2: The target space entanglement entropy for the ground state S0 with N = 40, 60, 80, 100
+are plotted against the radius r of the subregion A.
+Second, we calculate the target space entanglement entropy for an excited state corresponding
+to an AdS giant graviton indicated in Figs. 1b and 1e. (3.4) in this case is
+SAdS(r, N, J) =
+N−1
+X
+i=0
+H(ai(r)) + H(aN+J(r)) .
+(3.6)
+In Fig. 3, we plot SAdS for N = 50 and J = 50 against r. In order to see only the contribution
+of the AdS giant graviton to the target space entanglement entropy, we subtract S0 from SAdS. In
+Fig. 4, we plot S′
+AdS = SAdS(r, 50, 50) −S0(r, 50) against r. Note here that N for SAdS is diﬀerent
+from that for S0. We see that there is a peak at r =
+√
+N + 1 + J, which is considered as the
+position of the AdS giant graviton.
+Third, (3.4) for the excited state corresponding to a giant graviton indicated in Figs. 1c and 1f
+is
+Sg(r, N, J) =
+N−2−J
+X
+i=0
+H(ai(r)) +
+N
+X
+j=N−J
+H(aj(r)) .
+(3.7)
+In Fig.
+5, we plot Sg for N = 100 and J = 49 and S0 for N = 100 against r.
+In order to
+see only the contribution of the giant graviton to the target space entanglement entropy, we plot
+S′
+g = Sg(r, 100, 49) −S0(r, 100) against r in Fig. 6. We see that there is a peak at r =
+√
+N −J,
+which is considered as the position of the giant graviton.
+0 ≤r < ∞.
+9
+
+Figure 3: The solid line represents the target space entanglement entropy for the state corresponding
+to the AdS giant graviton SAdS(r) with N = 50 and J = 50, while the dashed line represents the
+target space entanglement entropy for the ground state S0(r) with N = 50.
+Figure 4: S′
+AdS = SAdS(r, 50, 50) −S0(r, 50) is plotted against r.
+10
+
+Figure 5: The solid line represents the target space entanglement entropy for the state corresponding
+to the giant graviton Sg(r) with N = 100 and J = 49, while the dashed line represents the target
+space entanglement entropy for the ground state S0 with N = 100.
+Figure 6: S′
+g = Sg(r, 100, 49) −S0(r, 100) is plotted against r.
+11
+
+4
+Area of boundary in the bubbling AdS geometry
+In this section, we calculate the area (length) of boundary of the subregion A in the bubbling
+geometry for the three cases, AdS5 × S5, an AdS giant graviton and a giant graviton.
+We introduce the polar coordinates (˜r, φ) in the x1 −x2 plane. The solution determined by a
+droplet in Fig. 1a corresponding to AdS5 × S5 is given by [14]
+˜z(˜r, y; r0) ≡z −1
+2 =
+˜r2 −r2
+0 + y2
+2
+p
+(˜r2 + r2
+0 + y2)2 −4˜r2r2
+0
+−1
+2 ,
+Vφ = −1
+2
+ 
+˜r2 + r2
+0 + y2
+p
+(˜r2 + r2
+0 + y2)2 −4˜r2r2
+0
+−1
+!
+,
+(4.1)
+where r0 is related to the radius of AdS5 as r0 = R2
+AdS =
+√
+N.
+Based on (4.1), one can construct a solution for a general circular symmetric droplet as [14]
+˜z =
+X
+i
+(−1)i+1˜z(˜r, y; ri), VΦ =
+X
+i
+(−1)i+1Vφ(˜r, y; ri) ,
+(4.2)
+where r1 is the radius of the most outer circle and r2 is the radius of the second outer circle and so
+on. We can construct z corresponding to the droplets in Fig. 1b and Fig. 1c using (4.2).
+We identify the target space of the complex matrix model with the x1 −x2 plane at y = 0 and
+consider the subregion A in the x1 −x2 plane. We calculate the area (length) of boundary of A
+using the metric (2.12).
+The induced metric in the x1 −x2 plane at y = 0 denoted by γij is
+γ˜r˜r = h2, γφφ = −h−2V 2
+φ + h2˜r2, γ˜rφ = γφ˜r = 0 .
+(4.3)
+Then , the area (length) of the boundary of A in the x1 −x2 plane, which we denote by L, is given
+by
+L(r) =
+Z 2π
+0
+dφ√γφφ = 2π
+q
+−h−2V 2
+φ + h2r2 ,
+(4.4)
+where h and Vφ are deﬁned in (2.13).
+First, we calculate the area of boundary of A for AdS5 × S5. We see from (4.1) that γφφ is in
+the y →0 limit given by
+γφφ = lim
+y→0(−h−2V 2
+φ + h2˜r2) = ˜r2 + r2
+0 −|˜r2 −r2
+0|
+2r0
+.
+(4.5)
+12
+
+Thus, the length of the boundary of A is
+L(r) =
+Z 2π
+0
+√γφφ =
+√
+2π
+s
+r2 + r2
+0 −|r2 −r2
+0|
+r0
+.
+(4.6)
+L is proportional to r for r < r0: L(r) =
+q
+2
+r0 πr. This behavior qualitatively agrees with that of
+the target space entanglement entropy in Fig. 2. L is constant for r > r0,: L(r) = √2r0π.
+Next, we calculate the area of the boundary of A for the (AdS) giant gravitons. We see from
+(4.1) and (4.2) that
+z = ˜z + 1
+2 =
+3
+X
+i=1
+(−1)i+1˜z(r, y; ri) + 1
+2 ,
+Vφ =
+3
+X
+i=1
+(−1)i+1Vφ(r, y; ri) ,
+(4.7)
+where r1 > r2 > r3. By using (4.3), we can calculate γφφ in the y →0 limit. The results are
+summarized in appendix B. We denote the area of boundary of A for AdS5 × S5, an AdS giant
+graviton and a giant graviton by L0(r). LAdS(r) and Lg(r), respectively.
+In Fig. 7, we plot LAdS(r) for r1 =
+√
+101, r2 = 10, r3 =
+√
+50 and L0(r) for r0 = r3 against
+r. As in the target space entanglement entropy, we subtract L0 from LAdS. In Fig .8, we plot
+L′
+AdS = LAdS(r) −L0(r) against r. We see that L′
+AdS has a peak around r = r1 =
+√
+N. This
+behavior of L′
+AdS qualitatively agrees with S′
+AdS in Fig. 4.
+In Fig. 9, we plot Lg(r) for r1 =
+√
+101, r2 =
+√
+51, r3 =
+√
+50 and L0 for r0 = r1 against r. In
+Fig. 10, we plot L′
+g = Lg(r) −L0(r) against r. We see that L′
+g has a peak around r = r2 =
+√
+N.
+The sign of the peak is diﬀerent from that of the peak in Fig. 6.: the area of boundary of A has a
+positive peak, while the target space entanglement entropy a negative peak. The peak of the target
+space entanglement for the giant graviton comes from disappearance of a fermion. If we reinterpret
+this as a particle corresponding to a hole, the sign of the peak should ﬂip.
+In this way, we ﬁnd that the contribution of the (AdS) giant gravitons to the area (length) of
+boundary of A qualitatively agrees with that to the target space entanglement entropy.
+13
+
+Figure 7: The solid line represents the area of the boundary of the subregion A for an AdS giant
+graviton LAdS with r1 =
+√
+101, r2 = 10 and r3 =
+√
+50, while the dashed line represents that for the
+ground state L0 with r0 =
+√
+50.
+Figure 8: L′
+AdS = LAdS(r) −L0(r) is plotted against r.
+14
+
+Figure 9: The solid line represents the area of boundary of subregion A for a giant graviton LAdS
+with r1 =
+√
+101, r2 =
+√
+51 and r3 =
+√
+50, while tha dashed line represents that for the ground state
+L0 with r0 =
+√
+101.
+Figure 10: L′
+g = Lg(r) −L0(r) is plotted against r.
+15
+
+5
+Conclusion and discussion
+In this paper, we studied the target space entanglement entropy in the complex matrix model that
+describes the chiral primary sector in N = 4 SYM on R×S3. The eigenvalues of the complex matrix
+model are identiﬁed with the position coordinates of fermions in two-dimensional plane, and the
+eigenvalue distribution gives a droplet formed by the fermions, which is identiﬁed with that in the
+bubbling geometry specifying a boundary condition for a half-BPS solution with R×SO(4)×SO(4)
+in type IIB supergravity. We calculated the target space entanglement entropy of a subregion in
+two-dimensional plane with droplets corresponding to AdS5×S5, an AdS giant graviton and a giant
+graviton in the bubbling geometry. We also calculated the area of boundary of the subregion in
+the bubbling geometry, and found a qualitative agreement between the target space entanglement
+entropy and the area of boundary. For the following reason, it is considered as reasonable that we
+subtracted the contribution of the ground state (AdS5 × S5) when we compared the target space
+entanglement entropy and the area of boundary for the (AdS) giant gravitons. The fermions forming
+the droplet corresponding to the ground state originate from D3-branes in ﬂat space-time. These
+D3-branes disappear, and their presence is trade for a deformation of ﬂat space-time to AdS5 × S5.
+The target space entanglement entropy for the ground state measures the entanglement among the
+fermions corresponding to the disappearing D3-branes.
+In order to see whether a quantitative agreement exists, we need to identify the eﬀective Newton
+constant in (2+1)-dimensional space-time consisting the two-dimensional plane and the time and
+ﬁx the factor of proportionality 1/4GN between the target space entanglement entropy and the
+area. Possibly, we also need more elaborated correspondence between chiral primary states and
+droplets. Finally, we make comments on the scaling with respect to N. The maximum of the target
+space entanglement entropy of a subregion in two-dimensional plane with a droplet corresponding
+to AdS5 × S5 scales almost as N1/2 as seen in Fig. 2, while the maximum of the magnitude of
+the subtracted one corresponding to an AdS giant graviton or a giant graviton scales as N0. On
+the other hand, we see from (4.6) that the maximum of the area of boundary for AdS5 × S5 scales
+as √r0 ∼N1/4, and we have veriﬁed that the maximum of the subtracted one for an AdS giant
+graviton or a giant graviton behaves almost as N3/4 when the ratio between r2 and r3 for an AdS
+giant graviton in Fig. 1b and r1 and r2 for a giant graviton in Fig. 1c is ﬁxed. This diﬀerence of
+the relative ratios between the maxima for AdS5 ×S5 and (AdS) giant gravitons does not matter if
+only subtracted quantities make physical sense as discussed above. The fact that the entanglement
+entropy and the area scales as N0 and N3/4, respectively, commonly for an AdS giant gravion and
+a giant graviton suggests that the diﬀerence between the scalings of the subtracted entropy and
+area can be compensated by the scaling of the eﬀective Newton constant. While it is conjectured
+in [3, 4] that the target space entanglement entropy in 9+1 dimensions scales as N2, the target
+space entanglement entropy calculated in this paper is deﬁned in a (2+1)-dimensional subspace so
+16
+
+that it possibly scales in a diﬀerent manner. We hope to report progress in these issues in the near
+future.
+Acknowledgments
+A.T. was supported in part by Grant-in-Aid for Scientiﬁc Research (No.
+18K03614 and No.
+21K03532) from Japan Society for the Promotion of Science.
+K.Y. was supported in part by
+Grant-in-Aid for JSPS Fellows (No. 20J13836).
+A
+Harmonic oscillator in two-dimensional plane
+In this appendix, we review that the wave function of the lowest Landau level arises as a wave
+function of holomorphic sector of a particle under harmonic oscillator potential in two-dimensional
+plane.. The hamiltonian is represented in the complex coordinate (z, z∗) basis as
+ˆh = −∂
+∂z
+∂
+∂z∗+ zz∗= ˆc†
+1ˆc1 + ˆc†
+2ˆc2 + 1 ,
+(A.1)
+where
+ˆc1 ≡
+1
+√
+2
+
+z +
+∂
+∂z∗
+
+, ˆc2 =
+1
+√
+2
+
+z∗+ ∂
+∂z
+
+ˆc†
+1 ≡
+1
+√
+2
+
+z∗−∂
+∂z
+
+, ˆc†
+2 =
+1
+√
+2
+
+z −
+∂
+∂z∗
+
+(A.2)
+The commutation relations of ˆci and ˆc†
+i are given by
+[ˆci, ˆc†
+j] = δij, [ˆci, ˆcj] = [ˆc†
+i, ˆc†
+j] = 0
+(A.3)
+The wave function of the ground state, Φ0,0(z, z∗), satisﬁes ˆcΦ0,0 = 0, which gives
+Φ0,0 =
+1
+√πe−zz∗.
+(A.4)
+The wave functions of excited states are given by
+Φk,l(z, z∗) =
+1
+√
+k!l!
+(ˆc†
+1)k(ˆc†
+2)lΦ0,0 .
+(A.5)
+The energy eigenvalue of the above states are k + l + 1. In particular, the wave functions of the
+(0, l) excited states, Φl(z, z∗) ≡Φ0,l(z, z∗), take a holomorphic form
+Φl(z, z∗) =
+r
+2l
+l!πzle−zz∗.
+(A.6)
+Φl(z, z∗) are the wave functions of the lowest Landau level in the context of quantum Hall eﬀect.
+17
+
+B
+γφφ for (AdS) giant gravitons
+γφφ is given in the y →0 limit as follows:
+(i) r > r1
+lim
+y→0 γφφ = r2
+1(r6 + r2
+2(r4 + 3r3˜r2) −r2
+3(4r4 + r4
+2)) −r4(˜r2 + r2
+2)(r2
+2 −r2
+3)
+(˜r2 −r2
+1)(˜r2 −r2
+2)2(˜r2 −r2
+3)
+r
+r2
+1
+(˜r2−r2
+1)2 −
+r2
+2
+(˜r2−r2
+2)2 +
+r2
+3
+(˜r2−r2
+3)2
+.
+(B.1)
+(ii) r1 > r > r2
+lim
+y→0 γφφ =
+−˜r2(˜r2 + r2
+3)(˜r2(˜r2 −4r2
+3) + r2
+1(r2
+2 −r2
+3) −r2
+2r2
+3)
+(˜r2 −r2
+1)(˜r2 −r2
+2)(˜r2 −r2
+3)2
+r
+r2
+1
+(˜r2−r2
+1)2 +
+r2
+2
+(˜r2−r2
+2)2 −
+r2
+3
+(˜r2−r2
+3)2
+.
+(B.2)
+(iii) r2 > r > r3
+lim
+y→0 γφφ = ˜r2r2
+1(r4 −˜r2(r2
+2 + r2
+3) −3r2
+2r2
+3) −r6(r2
+2 + r2
+3) + 4r4r2
+2r2
+3 −r4
+1(r2
+2r2
+3 + r4)
+(˜r2 −r2
+1)2(˜r2 −r2
+2)(˜r2 −r2
+3)
+r
+−
+r2
+1
+(˜r2−r2
+1)2 +
+r2
+2
+(˜r2−r2
+2)2 +
+r2
+3
+(˜r2−r2
+3)2
+.
+(B.3)
+(iv) r3 > r
+lim
+y→0 γφφ = ˜r2(−r6 + ˜r2r2
+2(3˜r2 + r2
+3) + (r2
+2 −r2
+3)(˜r2 + r2
+2) −r4
+2(4˜r2 −r2
+3))
+(˜r2 −r2
+1)(˜r2 −r2
+2)2(˜r2 −r2
+3)
+r
+r2
+1
+(˜r2−r2
+1)2 −
+r2
+2
+(˜r2−r2
+2)2 +
+r2
+3
+(˜r2−r2
+3)2
+.
+(B.4)
+References
+[1] S. Ryu and T. Takayanagi, Phys. Rev. Lett. 96, 181602 (2006) [arXiv:hep-th/0603001 [hep-th]].
+[2] E. A. Mazenc and D. Ranard, [arXiv:1910.07449 [hep-th]].
+[3] S. R. Das, A. Kaushal, G. Mandal and S. P. Trivedi, J. Phys. A 53, no.44, 444002 (2020)
+[arXiv:2004.00613 [hep-th]].
+[4] S. R. Das, A. Kaushal, S. Liu, G. Mandal and S. P. Trivedi, JHEP 04, 225 (2021)
+[arXiv:2011.13857 [hep-th]].
+[5] H. R. Hampapura, J. Harper and A. Lawrence, JHEP 10, 231 (2021) [arXiv:2012.15683 [hep-
+th]].
+[6] S. Sugishita, JHEP 08, 046 (2021) [arXiv:2105.13726 [hep-th]].
+[7] A. Frenkel and S. A. Hartnoll, [arXiv:2111.05967 [hep-th]].
+18
+
+[8] T. Banks, W. Fischler, S. H. Shenker and L. Susskind, Phys. Rev. D 55, 5112-5128 (1997)
+[arXiv:hep-th/9610043 [hep-th]].
+[9] J. M. Maldacena, Adv. Theor. Math. Phys. 2, 231-252 (1998) [arXiv:hep-th/9711200 [hep-th]].
+[10] S. S. Gubser, I. R. Klebanov and A. M. Polyakov, Phys. Lett. B 428, 105 (1998) [hep-
+th/9802109].
+[11] E. Witten, Adv. Theor. Math. Phys. 2, 253 (1998) [hep-th/9802150].
+[12] S. Corley, A. Jevicki and S. Ramgoolam, Adv. Theor. Math. Phys. 5, 809-839 (2002)
+[arXiv:hep-th/0111222 [hep-th]].
+[13] D. Berenstein, JHEP 07, 018 (2004) [arXiv:hep-th/0403110 [hep-th]].
+[14] H. Lin, O. Lunin and J. M. Maldacena, JHEP 10, 025 (2004) [arXiv:hep-th/0409174 [hep-th]].
+[15] Y. Takayama and A. Tsuchiya, JHEP 10, 004 (2005) [arXiv:hep-th/0507070 [hep-th]].
+[16] A. Ghodsi, A. E. Mosaﬀa, O. Saremi and M. M. Sheikh-Jabbari, Nucl. Phys. B 729, 467-491
+(2005) [arXiv:hep-th/0505129 [hep-th]].
+[17] I. Klich, J. Phys. A 39, L85-L92 (2006) [arXiv:quant-ph/0406068 [quant-ph]].
+[18] I. D. Rodriguez and G. Sierra, Phys. Rev. B 80, 153303 (2009) [arXiv:0811.2188 [cond-
+mat.mes-hall]].
+[19] P. Calabrese, M. Mintchev and E. Vicari, Phys. Rev. Lett. 107, 020601 (2011) [arXiv:1105.4756
+[cond-mat.stat-mech]].
+19

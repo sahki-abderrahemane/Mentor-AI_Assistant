@@ -1,0 +1,946 @@
+From Computational Graphs to
+Contextual Routing: A
+Comprehensive Analysis of
+Optimization and Transformer
+Architectures
+Sahki Abderrahemane
+AI Engineer & Deep Learning Enthusiast
+June 2026
+
+Contents
+1
+Introduction
+2
+2
+Advanced Optimization & Computational Graphs
+2
+2.1
+Backpropagation via Jacobians
+. . . . . . . . . . . . . . . . .
+2
+2.2
+The Loss Landscape
+. . . . . . . . . . . . . . . . . . . . . . .
+3
+2.3
+Classical Optimizers: Momentum, RMSProp, and AdaGrad
+.
+4
+2.3.1
+SGD with Momentum
+. . . . . . . . . . . . . . . . . .
+4
+2.3.2
+AdaGrad . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.3.3
+RMSProp . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.4
+Adam & AdamW: The Modern Standard . . . . . . . . . . . .
+6
+2.4.1
+Adam
+. . . . . . . . . . . . . . . . . . . . . . . . . . .
+6
+2.4.2
+AdamW: Decoupled Weight Decay
+. . . . . . . . . . .
+6
+3
+Regularization & Training Dynamics
+7
+3.1
+Normalization: Batch & Layer . . . . . . . . . . . . . . . . . .
+7
+3.1.1
+Batch Normalization (BN) . . . . . . . . . . . . . . . .
+7
+3.1.2
+Layer Normalization (LN) . . . . . . . . . . . . . . . .
+8
+3.2
+Mixed Precision Training (FP16/BF16) . . . . . . . . . . . . .
+8
+3.3
+Gradient Clipping & Gradient Accumulation . . . . . . . . . .
+9
+4
+The Self-Attention Mechanism & Sequence Grounding
+10
+4.1
+Scaled Dot-Product Attention . . . . . . . . . . . . . . . . . .
+10
+4.2
+Multi-Head Attention . . . . . . . . . . . . . . . . . . . . . . .
+11
+4.3
+Positional Encodings . . . . . . . . . . . . . . . . . . . . . . .
+12
+4.3.1
+Sinusoidal Positional Encoding
+. . . . . . . . . . . . .
+12
+4.3.2
+Rotary Position Embedding (RoPE)
+. . . . . . . . . .
+12
+5
+Transformer Architectural Routing Paradigms
+13
+5.1
+Graph Routing Intuition . . . . . . . . . . . . . . . . . . . . .
+13
+5.2
+BERT: Bidirectional Encoder
+. . . . . . . . . . . . . . . . . .
+13
+5.3
+GPT: Causal Decoder
+. . . . . . . . . . . . . . . . . . . . . .
+14
+5.4
+T5: Encoder-Decoder with Cross-Attention . . . . . . . . . . .
+14
+5.5
+Visualizing Attention Masks . . . . . . . . . . . . . . . . . . .
+15
+5.6
+Architecture Overview . . . . . . . . . . . . . . . . . . . . . .
+15
+6
+Conclusion
+15
+1
+
+1
+Introduction
+Deep learning has evolved from simple layered perceptrons to massive attention-based
+architectures that dominate natural language processing and beyond. Two
+fundamental pillars support this progress: robust optimization theory, which
+provides the mathematical machinery to train deep models, and architectural
+innovations, which structure how information flows through a network. This
+report offers a self-contained journey through both pillars.
+We begin by dissecting computational graphs and the Jacobian-based
+backpropagation that makes gradient computation automatic and efficient.
+We then explore the geometry of the loss landscape, contrasting sharp and
+flat minima, and detail the most impactful optimizers: from classical SGD
+with momentum and RMSProp to the modern Adam and AdamW, includ-
+ing the crucial distinction between L2 regularization and decoupled weight
+decay. Normalization techniques—Batch and Layer Normalization—are ex-
+amined with a mathematical lens, explaining why LayerNorm is preferred for
+sequential data. We also discuss practical training strategies: mixed precision
+with loss scaling, gradient clipping, and gradient accumulation.
+The second half of the report transitions to the Transformer architec-
+ture. We derive the scaled dot-product attention, motivate positional encod-
+ings, and then analyze three routing paradigms: the open mask of BERT,
+the causal mask of GPT, and the encoder-decoder cross-attention of T5.
+Throughout, rigorous mathematics is paired with PyTorch implementations
+and visual diagrams to build intuition. By the end, the reader will possess
+a deep understanding of the optimization and architectural principles that
+power modern deep learning.
+2
+Advanced Optimization & Computational
+Graphs
+2.1
+Backpropagation via Jacobians
+A neural network can be viewed as a directed acyclic computational graph
+G = (V, E).
+Each node performs an operation, and edges carry tensors.
+The forward pass computes a loss L by composing functions.
+To obtain
+gradients, backpropagation traverses the graph in reverse topological order
+using the chain rule.
+For a node computing z = f(x, y), the Jacobians
+∂z/∂x and ∂z/∂y are multiplied by the upstream gradient ∂L/∂z to produce
+downstream gradients.
+PyTorch Implementation: Custom Autograd Function Listing 1 shows
+2
+
+x
+W
+Wx
+ReLU
+L
+∂L
+∂h
+∂L
+∂z
+∂L
+∂x
+∂L
+∂W
+Figure 1: Forward computation (black) and backward gradient flow (red).
+Local Jacobians are chained to compute gradients with respect to all param-
+eters.
+how PyTorch implements the Jacobian-vector product inside a custom ‘au-
+tograd.Function‘.
+1 import
+torch
+2 from
+torch.autograd
+import
+Function
+3
+4 class
+LinearFunction (Function):
+5
+@staticmethod
+6
+def
+forward(ctx , input , weight , bias=None):
+7
+ctx. save_for_backward (input , weight)
+8
+output = input.matmul(weight.t())
+9
+if bias is not None:
+10
+output += bias
+11
+return
+output
+12
+13
+@staticmethod
+14
+def
+backward(ctx , grad_output):
+15
+input , weight = ctx.saved_tensors
+16
+grad_input = grad_output.matmul(weight)
+17
+grad_weight = grad_output.t().matmul(input)
+18
+return
+grad_input , grad_weight , None
+Listing 1:
+Custom linear layer illustrating Jacobian computation in
+backpropagation.
+2.2
+The Loss Landscape
+The loss function L(θ) of a deep network defines a high-dimensional surface.
+Critical points where ∇L(θ) = 0 can be minima, maxima, or saddle points.
+The local curvature is captured by the Hessian matrix H = ∇2L(θ). In high
+dimensions, saddle points—where some eigenvalues are positive and others
+negative—are far more common than true minima. Efficient optimizers need
+to escape such points rapidly.
+3
+
+A central theme in generalization is the preference for flat minima over
+sharp ones. Flat minima have smaller eigenvalues of the Hessian, meaning
+that small perturbations of the parameters do not drastically increase the
+loss. This robustness often correlates with better test performance.
+−2
+0
+2
+0
+1
+2
+Parameter θ
+Loss L(θ)
+Flat minimum (good)
+Sharp minimum (poor)
+Figure 2: Illustration of flat vs. sharp minima in 1D. Flat minima are more
+robust to parameter perturbations, leading to better generalization.
+2.3
+Classical Optimizers: Momentum, RMSProp, and
+AdaGrad
+Before adaptive methods like Adam, several foundational optimizers ad-
+dressed the limitations of vanilla SGD. We review them here because their
+ideas are reused in modern optimizers.
+2.3.1
+SGD with Momentum
+Momentum accumulates a velocity vector vt that helps the optimizer push
+through narrow valleys and small oscillations:
+vt = γvt−1 + η∇L(θt),
+(1)
+θt+1 = θt −vt.
+(2)
+γ ∈[0, 1) is the momentum coefficient (often 0.9). The update direction is a
+smoothed average of past gradients.
+4
+
+2.3.2
+AdaGrad
+AdaGrad adapts the learning rate per parameter by dividing by the square
+root of the sum of squared historical gradients:
+st = st−1 + (∇L(θt))2,
+(3)
+θt+1 = θt −
+η
+√st + ϵ∇L(θt).
+(4)
+It performs well for sparse features but accumulates the squared gradients
+indefinitely, causing the learning rate to decay to zero prematurely.
+2.3.3
+RMSProp
+RMSProp fixes AdaGrad’s monotonically decreasing learning rate by using
+a moving average of squared gradients, similarly to how Adam later employs
+it:
+st = βst−1 + (1 −β)(∇L(θt))2,
+(5)
+θt+1 = θt −
+η
+√st + ϵ∇L(θt).
+(6)
+Here β controls the decay rate (commonly 0.9). This allows the effective
+learning rate to adapt to recent gradient magnitudes without decaying to
+zero. RMSProp is particularly popular for recurrent networks.
+PyTorch Implementation: RMSProp from Scratch Listing 2 shows a
+simple manual implementation that mirrors the internal optimizer.
+1 def
+rmsprop_step(params , sq_avgs , lr=1e-3, beta =0.9, eps=1e
+-8):
+2
+with
+torch.no_grad ():
+3
+for p, s in zip(params , sq_avgs):
+4
+grad = p.grad
+5
+if grad is None:
+6
+continue
+7
+s.mul_(beta).add_ ((1 - beta) * grad ** 2)
+8
+p.sub_(lr * grad / (s.sqrt () + eps))
+Listing 2: Manual RMSProp update step.
+5
+
+2.4
+Adam & AdamW: The Modern Standard
+2.4.1
+Adam
+Adam combines the momentum (first moment) and RMSProp (second mo-
+ment) with bias correction:
+mt = β1mt−1 + (1 −β1)gt,
+(7)
+vt = β2vt−1 + (1 −β2)g2
+t .
+(8)
+The bias-corrected estimates are ˆmt = mt/(1 −βt
+1), ˆvt = vt/(1 −βt
+2), and the
+update is
+θt+1 = θt −η
+ˆmt
+√ˆvt + ϵ.
+(9)
+Adam adapts the effective learning rate per parameter and includes momen-
+tum, making it robust to many problems.
+2.4.2
+AdamW: Decoupled Weight Decay
+Standard L2 regularization adds λ
+2∥θ∥2 to the loss, modifying the gradient
+to gt + λθ. In adaptive optimizers like Adam, this addition interacts with
+the second-moment estimate, causing sub-optimal regularization. AdamW
+decouples weight decay by applying it directly:
+θt+1 = (1 −ηλ)θt −η
+ˆmt
+√ˆvt + ϵ.
+(10)
+This simple change yields better generalization and is the default for training
+Transformers.
+PyTorch Implementation:
+AdamW update logic Listing 3 demon-
+strates the core of the AdamW update step (excluding bias correction for
+brevity).
+1 def
+adamw_step(params , optimizer_state , lr , betas ,
+weight_decay , eps):
+2
+beta1 , beta2 = betas
+3
+for p, state in zip(params , optimizer_state ):
+4
+grad = p.grad
+5
+if grad is None:
+6
+continue
+7
+state[’step ’] += 1
+8
+state[’m’] = beta1 * state[’m’] + (1 - beta1) * grad
+9
+state[’v’] = beta2 * state[’v’] + (1 - beta2) * grad
+**2
+10
+m_hat = state[’m’] / (1 - beta1 ** state[’step ’])
+6
+
+11
+v_hat = state[’v’] / (1 - beta2 ** state[’step ’])
+12
+p.mul_ (1 - lr * weight_decay)
+13
+p.sub_(lr * m_hat / (v_hat.sqrt () + eps))
+Listing 3: Core logic of the AdamW optimizer.
+0
+2
+4
+6
+0.5
+1
+1.5
+2
+Iteration
+Loss
+AdamW (fast, stable)
+SGD (slow)
+Figure 3: Typical convergence behavior: Adam(W) adapts per-parameter
+learning rates and often converges faster and to a better minimum than
+plain SGD.
+3
+Regularization & Training Dynamics
+3.1
+Normalization: Batch & Layer
+Normalization layers stabilize training by reducing internal covariate shift
+and smoothing the optimization landscape.
+3.1.1
+Batch Normalization (BN)
+For a mini-batch of size m and feature dimension d, BN normalizes across
+the batch for each feature independently:
+µj = 1
+m
+m
+X
+i=1
+xij,
+σ2
+j = 1
+m
+m
+X
+i=1
+(xij −µj)2,
+(11)
+ˆxij = xij −µj
+q
+σ2
+j + ϵ
+,
+yij = γjˆxij + βj.
+(12)
+The statistics are computed over the batch, so BN behavior depends on batch
+size and is inconsistent between training and inference (running averages are
+used for inference).
+7
+
+3.1.2
+Layer Normalization (LN)
+Layer Normalization transposes the normalization axis: for a single example
+with d features, it computes statistics over the feature dimension:
+µi = 1
+d
+d
+X
+j=1
+xij,
+σ2
+i = 1
+d
+d
+X
+j=1
+(xij −µi)2,
+(13)
+ˆxij = xij −µi
+p
+σ2
+i + ϵ
+,
+yij = γjˆxij + βj.
+(14)
+LayerNorm is independent of batch size and works identically at training and
+inference, making it ideal for variable-length sequences in Transformers.
+Batch
+Normalization
+Batch axis
+Feature axis
+Layer
+Normalization
+Feature axis
+Example (token)
+Figure 4: BatchNorm normalizes over the batch dimension for each feature;
+LayerNorm normalizes over the feature dimension for each example. This
+makes LayerNorm suitable for sequences with variable lengths.
+LayerNorm Implementation Listing 4 shows a simplified forward pass of
+LayerNorm written from scratch.
+1 import
+torch
+2
+3 def
+layer_norm_forward (x, gamma , beta , eps=1e-5):
+4
+# x: (batch , features)
+5
+mean = x.mean(dim=-1, keepdim=True)
+6
+var = x.var(dim=-1, keepdim=True , unbiased=False)
+7
+x_norm = (x - mean) / torch.sqrt(var + eps)
+8
+return
+gamma * x_norm + beta
+Listing 4: Simplified LayerNorm forward pass.
+3.2
+Mixed Precision Training (FP16/BF16)
+Training in mixed precision stores weights in FP32 but computes forward/back-
+ward in lower precision (FP16 or BF16) for speed and memory savings. The
+8
+
+main numerical danger is gradient underflow: small gradients may become
+zero. A loss scale factor S shifts the gradients:
+scaled loss = S · L,
+gradients scaled by S.
+(15)
+After backpropagation, gradients are divided by S before the optimizer step.
+PyTorch Mixed Precision Example Listing 5 shows a training step with
+automatic mixed precision using ‘torch.cuda.amp‘.
+1 scaler = torch.cuda.amp.GradScaler ()
+2 for data , target in dataloader:
+3
+optimizer.zero_grad ()
+4
+with
+torch.cuda.amp.autocast ():
+5
+output = model(data)
+6
+loss = loss_fn(output , target)
+7
+scaler.scale(loss).backward ()
+8
+scaler.step(optimizer)
+9
+scaler.update ()
+Listing 5: Mixed precision training with gradient scaling.
+3.3
+Gradient Clipping & Gradient Accumulation
+Gradient clipping prevents exploding gradients by scaling the gradient
+vector when its norm exceeds a threshold:
+g ←
+(
+g,
+∥g∥2 ≤τ,
+τ
+g
+∥g∥2,
+∥g∥2 > τ.
+(16)
+Gradient accumulation simulates larger batch sizes by summing gradients
+over several micro-batches before updating weights.
+Implementation Snippets
+1 # Clipping
+2 torch.nn.utils.clip_grad_norm_ (model.parameters (), max_norm
+=1.0)
+3
+4 # Accumulation (manual)
+5 accumulation_steps = 4
+6 for i, (data , target) in enumerate(dataloader):
+7
+loss = model(data)
+8
+loss.backward ()
+9
+if (i + 1) % accumulation_steps == 0:
+10
+optimizer.step ()
+11
+optimizer.zero_grad ()
+Listing 6: Gradient clipping and accumulation.
+9
+
+4
+The Self-Attention Mechanism & Sequence
+Grounding
+4.1
+Scaled Dot-Product Attention
+Given queries Q ∈RT×dk, keys K ∈RT×dk, and values V ∈RT×dv, the
+attention output is
+Attention(Q, K, V) = softmax
+QK⊤
+√dk
+
+V.
+(17)
+The dot product QK⊤can grow large as dk increases, pushing the softmax
+into regions of near-zero gradient. Dividing by √dk keeps the variance of the
+logits constant (assuming uncorrelated entries with variance 1/dk), maintain-
+ing healthy gradient flow.
+Q
+K
+V
+MatMul
+Scale
+Mask (opt.)
+SoftMax
+MatMul
+Output
+Scaled Dot-Product
+Figure 5: Block diagram of scaled dot-product attention. The mask (op-
+tional) is added before softmax.
+10
+
+4.2
+Multi-Head Attention
+Instead of a single attention function, multiple heads are used in parallel, each
+with its own set of projections, to capture different representation subspaces.
+The outputs are concatenated and linearly projected:
+MultiHead(Q, K, V) = Concat(head1, . . . , headh)WO,
+(18)
+where headi = Attention(QWQ
+i , KWK
+i , VWV
+i ).
+WQ
+WK
+WV
+Split into h heads
+Head 1
+· · ·
+Head h
+Concat
+WO
+Output
+Figure 6: Multi-head attention: queries, keys, values are projected and split
+into h heads, processed in parallel, concatenated, and projected.
+PyTorch Implementation: Full Multi-Head Attention Listing 7 shows
+a complete multi-head attention module.
+1 import
+torch.nn as nn
+2 import
+torch.nn.functional as F
+3
+4 class
+MultiHeadAttention (nn.Module):
+5
+def
+__init__(self , d_model , n_heads , dropout =0.1):
+6
+super ().__init__ ()
+7
+assert
+d_model % n_heads == 0
+8
+self.d_k = d_model // n_heads
+9
+self.n_heads = n_heads
+10
+self.q_linear = nn.Linear(d_model , d_model)
+11
+self.k_linear = nn.Linear(d_model , d_model)
+12
+self.v_linear = nn.Linear(d_model , d_model)
+13
+self.out_linear = nn.Linear(d_model , d_model)
+14
+self.dropout = nn.Dropout(dropout)
+11
+
+15
+16
+def
+forward(self , Q, K, V, mask=None):
+17
+bs = Q.size (0)
+18
+Q = self.q_linear(Q).view(bs , -1, self.n_heads , self.
+d_k).transpose (1,2)
+19
+K = self.k_linear(K).view(bs , -1, self.n_heads , self.
+d_k).transpose (1,2)
+20
+V = self.v_linear(V).view(bs , -1, self.n_heads , self.
+d_k).transpose (1,2)
+21
+attn_scores = torch.matmul(Q, K.transpose (-2,-1)) / (
+self.d_k ** 0.5)
+22
+if mask is not None:
+23
+attn_scores = attn_scores + mask
+24
+attn_weights = F.softmax(attn_scores , dim=-1)
+25
+attn_weights = self.dropout(attn_weights)
+26
+attn_output = torch.matmul(attn_weights , V)
+27
+attn_output = attn_output.transpose (1,2).contiguous ()
+.view(bs , -1, self.n_heads * self.d_k)
+28
+return
+self.out_linear(attn_output)
+Listing 7: Multi-head attention with optional mask.
+4.3
+Positional Encodings
+Self-attention is permutation-invariant. To inject order, positional encodings
+are added to token embeddings.
+4.3.1
+Sinusoidal Positional Encoding
+PE(pos,2i) = sin
+
+pos
+100002i/dmodel
+
+,
+(19)
+PE(pos,2i+1) = cos
+
+pos
+100002i/dmodel
+
+.
+(20)
+They are deterministic and allow the model to easily learn relative distances.
+4.3.2
+Rotary Position Embedding (RoPE)
+RoPE applies a rotation to query and key vectors. For a pair (x2i, x2i+1) at
+position m, the rotation angle is θi = 10000−2i/d. The rotated vector is
+ x′
+2i
+x′
+2i+1
+
+=
+cos mθi
+−sin mθi
+sin mθi
+cos mθi
+  x2i
+x2i+1
+
+.
+(21)
+The dot product qm · kn after RoPE depends only on the relative position
+m −n, enabling better length generalization.
+Generating Sinusoidal Encodings
+12
+
+x
+y
+v
+RoPE(v)
+θ
+Figure 7:
+RoPE rotates each 2D pair of query/key dimensions by a
+position-dependent angle.
+1 def
+sinusoidal_encoding (max_len , d_model):
+2
+pe = torch.zeros(max_len , d_model)
+3
+position = torch.arange (0, max_len).unsqueeze (1).float ()
+4
+div_term = torch.exp(torch.arange (0, d_model , 2).float ()
+*
+5
+-(torch.log(torch.tensor (10000.0)) /
+d_model))
+6
+pe[:, 0::2] = torch.sin(position * div_term)
+7
+pe[:, 1::2] = torch.cos(position * div_term)
+8
+return pe
+Listing 8: Sinusoidal positional encoding.
+5
+Transformer Architectural Routing Paradigms
+5.1
+Graph Routing Intuition
+A Transformer can be interpreted as a fully connected graph on T token
+nodes. The attention weights A = softmax(QK⊤/√dk +M) define weighted
+edges. An additive mask M sets forbidden edges to −∞, zeroing them after
+softmax. This hard-wires the information flow.
+5.2
+BERT: Bidirectional Encoder
+BERT uses an encoder-only Transformer with a mask M = 0. Every token
+attends to every other token, left and right. This bidirectional context is
+ideal for classification and understanding tasks.
+13
+
+5.3
+GPT: Causal Decoder
+GPT models generate left-to-right. The causal mask M is lower-triangular
+with −∞in the upper triangle:
+Mij =
+(
+0,
+j ≤i,
+−∞,
+j > i.
+(22)
+Because limx→−∞ex = 0, the softmax weights for future tokens become ex-
+actly zero. This prevents information leakage.
+Causal Mask Implementation
+1 import
+torch
+2
+3 def
+causal_mask(seq_len , device=None):
+4
+mask = torch.triu(torch.ones(seq_len , seq_len , device=
+device), diagonal =1)
+5
+mask = mask.masked_fill(mask == 1, float(’-inf’))
+6
+return
+mask
+Listing 9: Causal mask generation.
+5.4
+T5: Encoder-Decoder with Cross-Attention
+T5’s encoder processes the input bidirectionally (open mask). The decoder
+generates autoregressively with causal self-attention and also uses cross-attention,
+where queries come from the decoder and keys/values from the encoder out-
+put (bidirectional mask). This enables tasks like translation and summariza-
+tion.
+Simplified T5-Style Cross-Attention Forward
+1 class
+CrossAttention (nn.Module):
+2
+def
+__init__(self , d_model , n_heads):
+3
+super ().__init__ ()
+4
+self.attn = MultiHeadAttention (d_model , n_heads)
+5
+6
+def
+forward(self , decoder_hidden , encoder_output ,
+decoder_mask=None):
+7
+return
+self.attn(decoder_hidden , encoder_output ,
+encoder_output , mask=None)
+Listing 10: Cross-attention layer between encoder and decoder.
+14
+
+5.5
+Visualizing Attention Masks
+The mask matrix directly encodes the allowed connections. Figure 8 contrasts
+the open mask (BERT) and causal mask (GPT). For a sequence length T = 5,
+the open mask is all zeros, while the causal mask has −∞(shown in red) in
+the upper triangle.
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+BERT Mask (Open)
+0
+−∞−∞−∞−∞
+0
+0
+−∞−∞−∞
+0
+0
+0
+−∞−∞
+0
+0
+0
+0
+−∞
+0
+0
+0
+0
+0
+GPT Mask (Causal)
+Figure 8: Attention mask matrices for T = 5. Left: BERT’s open mask (all
+zeros). Right: GPT’s causal mask (lower-triangular zeros, upper-triangular
+−∞). Red cells are prohibited connections.
+5.6
+Architecture Overview
+Figure 9 summarizes the three main Transformer paradigms: encoder-only
+(BERT), decoder-only (GPT), and encoder-decoder (T5). The flow of infor-
+mation and the type of attention used are indicated.
+6
+Conclusion
+This report has traversed the deep learning stack from gradient computa-
+tion to specialized Transformer routing. We dissected backpropagation via
+Jacobians, explored the loss landscape, and detailed classical and modern
+optimizers—including RMSProp, Adam, and AdamW—with precise math-
+ematics and PyTorch code.
+Normalization techniques (LayerNorm) were
+shown to be critical for stable training, and practical tricks (mixed precision,
+gradient clipping, accumulation) were demystified.
+On the architectural side, self-attention with positional encodings en-
+ables powerful sequence modeling. The routing masks of BERT, GPT, and
+T5 define distinct information flow paradigms, each suited to different tasks.
+These components, combined with robust optimization, form the backbone of
+15
+
+Encoder
+Full Bidir.
+BERT
+Decoder
+Causal
+GPT
+Encoder
+Full Bidir.
+Decoder
+Causal
+Cross-Attn
+T5
+Figure 9: High-level architectures.
+BERT uses only an encoder with full
+bidirectional attention. GPT uses a decoder with causal self-attention. T5
+pairs an encoder (bidirectional) with a decoder that has causal self-attention
+and cross-attention to the encoder output.
+today’s state-of-the-art language models. Understanding their interplay is es-
+sential for any deep learning practitioner aiming to build or adapt large-scale
+systems.
+References
+[1] A. Vaswani et al., “Attention is all you need,” in Adv. Neural Inf. Process.
+Syst., vol. 30, 2017.
+[2] J. Devlin et al., “BERT: Pre-training of deep bidirectional transformers
+for language understanding,” arXiv preprint arXiv:1810.04805, 2018.
+[3] A. Radford et al., “Improving language understanding by generative pre-
+training,” OpenAI, 2018.
+[4] C. Raffel et al., “Exploring the limits of transfer learning with a unified
+text-to-text transformer,” J. Mach. Learn. Res., vol. 21, no. 140, pp. 1–
+67, 2020.
+[5] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,”
+arXiv preprint arXiv:1412.6980, 2014.
+[6] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,” in
+Int. Conf. Learn. Represent., 2019.
+16
+
+[7] J. L. Ba, J. R. Kiros, and G. E. Hinton, “Layer normalization,” arXiv
+preprint arXiv:1607.06450, 2016.
+[8] T. Tieleman and G. Hinton, “Lecture 6.5-rmsprop: Divide the gradi-
+ent by a running average of its recent magnitude,” COURSERA: Neural
+Networks for Machine Learning, 2012.
+[9] P. Micikevicius et al., “Mixed precision training,” in Int. Conf. Learn.
+Represent., 2018.
+[10] J. Su et al., “RoFormer: Enhanced transformer with rotary position
+embedding,” arXiv preprint arXiv:2104.09864, 2021.
+17

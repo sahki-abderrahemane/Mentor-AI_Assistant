@@ -1,0 +1,781 @@
+Production AI Infrastructure
+From Distributed Logging to Auto-Canary Rollbacks
+Sahki Abderrahemane
+AI Systems Engineer & MLOps Architect
+June 30, 2026
+
+Abstract
+Deploying large-scale deep learning models in production demands mastery of
+asynchronous infrastructure, high-throughput serving systems, aggressive model
+compression, robust vector retrieval, and continuous observability. This report deliv-
+ers a rigorous, engineer-focused walkthrough of the five pillars of production AI: dis-
+tributed logging with non-blocking I/O, hardware-aware serving with PagedAtten-
+tion, integer quantization with SmoothQuant, enterprise Retrieval-Augmented Gen-
+eration (RAG) with vector databases, and automated drift-monitored canary de-
+ployments. Each module is dissected through mathematical foundations, from-scratch
+Python implementations, production-grade architectural blueprints, and real-world
+incident post-mortems. The report serves as a self-contained masterclass for MLOps
+professionals and systems engineers building the next generation of AI infrastruc-
+ture.
+Contents
+1
+Module 4.1 — Deep Distributed Logging & Infrastructure
+3
+1.1
+Theory & Mathematical Foundations . . . . . . . . . . . . . . . . . . . .
+3
+1.2
+Architecture & Visualizations
+. . . . . . . . . . . . . . . . . . . . . . . .
+3
+1.3
+Code Implementation . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4
+1.4
+Production Tools: MLflow & PyTorch Lightning Cluster Tracking . . . .
+5
+1.5
+Real-World Incident: Silent GPU Stall Due to Synchronous Logging . . .
+5
+2
+Module 4.2 — High-Performance Model Serving
+5
+2.1
+The Physics of Serving: Roofline Model & Arithmetic Intensity
+. . . . .
+5
+2.2
+KV-Cache Memory Fragmentation
+. . . . . . . . . . . . . . . . . . . . .
+6
+2.3
+PagedAttention: Virtual Memory for KV-Cache . . . . . . . . . . . . . .
+6
+2.3.1
+Visualizing PagedAttention Block Allocation . . . . . . . . . . . .
+6
+2.4
+Code: KV-Cache Appending in Causal Self-Attention . . . . . . . . . . .
+6
+2.5
+Production Tools: vLLM and Continuous Batching
+. . . . . . . . . . . .
+7
+2.6
+Real-World Incident: Cascading OOM Under Dynamic Batching . . . . .
+7
+3
+Module 4.3 — Model Compression & Hardware Optimization
+7
+3.1
+Quantization Mathematics: Scale and Zero-Point
+. . . . . . . . . . . . .
+7
+3.2
+Activation Outliers and SmoothQuant
+. . . . . . . . . . . . . . . . . . .
+8
+3.3
+Visualizing Activation Distributions . . . . . . . . . . . . . . . . . . . . .
+8
+3.4
+Code: Asymmetric Quantization & MSE Calculation
+. . . . . . . . . . .
+8
+3.5
+Production Tools: ONNX to TensorRT Pipeline . . . . . . . . . . . . . .
+9
+3.6
+Real-World Incident: Perplexity Explosion in 13B Model . . . . . . . . .
+9
+4
+Module 4.4 — Enterprise RAG & Vector Database Internals
+9
+4.1
+Non-Metric Vector Search & Similarity Measures
+. . . . . . . . . . . . .
+9
+4.2
+Approximate Nearest Neighbour Indices
+. . . . . . . . . . . . . . . . . .
+10
+4.3
+Dense-Sparse Hybrid Retrieval . . . . . . . . . . . . . . . . . . . . . . . .
+10
+4.4
+Code: Mini Vector DB with Cosine Similarity . . . . . . . . . . . . . . .
+10
+4.5
+Production Tools: Milvus, Pinecone, and Weaviate
+. . . . . . . . . . . .
+11
+4.6
+Real-World Incident: Vector Drift & Embedding Model Hot-Swap . . . .
+11
+1
+
+5
+Module 4.5 — Full-Scale Observability, Drift & Monitoring
+12
+5.1
+Data Drift vs. Concept Drift . . . . . . . . . . . . . . . . . . . . . . . . .
+12
+5.2
+Visualizing Drift
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+12
+5.3
+Code: PSI Calculation in NumPy . . . . . . . . . . . . . . . . . . . . . .
+12
+5.4
+Architecture: Automated Canary Rollback . . . . . . . . . . . . . . . . .
+13
+5.5
+Production Tools: Prometheus & Grafana
+. . . . . . . . . . . . . . . . .
+13
+5.6
+Real-World Incident: Canary Hardware Mismatch . . . . . . . . . . . . .
+14
+6
+Conclusion
+14
+2
+
+1
+Module 4.1 — Deep Distributed Logging & Infras-
+tructure
+1.1
+Theory & Mathematical Foundations
+In a typical multi-node training setup, hundreds of processes (one per GPU) generate logs
+at a rate of thousands of entries per second. Naive synchronous logging, where each log
+call performs a disk write or a network send, stalls the compute-intensive training loop.
+Asynchronous process isolation decouples log production from consumption using a
+lock-free multi-producer queue and a dedicated background consumer thread or process.
+The producer never waits for I/O; it merely enqueues a lightweight string reference.
+Host-to-device synchronization bottlenecks are particularly insidious. In Py-
+Torch, a simple call like loss.item() on a CUDA tensor invokes an implicit cudaStreamSynchronize()
+on the default stream. This halts the GPU pipeline until all preceding operations finish,
+effectively serialising CPU and GPU execution. Under heavy logging, this can reduce
+overall GPU utilisation below 30%. The asynchronous logger avoids such stalls by only
+copying data to host when the stream is already synchronised—never inside the hot loop.
+Multi-GPU reduction collectives such as All-Reduce and All-Gather are the back-
+bone of distributed training.
+The ring-All-Reduce algorithm splits the tensor into P
+chunks (where P is the number of processes), and each process sends its chunk to its
+right neighbour in a logical ring. After P −1 steps of send-receive, each process has
+the complete sum. The total data transferred per process is 2P−1
+P |tensor|, near-optimal.
+However, logging inside a collective callback can cause deadlocks if the logging library
+itself uses another collective, or it can introduce latency spikes that violate the tight
+communication deadlines of NCCL.
+1.2
+Architecture & Visualizations
+Figure 1 contrasts the synchronous .item() logging path with an asynchronous logging
+queue. The latter uses a dedicated background thread that drains a queue.Queue.
+3
+
+GPU Kernel
+cudaStreamSynchronize()
+(Stall GPU)
+.item() →copy to host
+Write to disk / network
+Next kernel
+Sync
+GPU Kernel
+Async copy to pinned host buffer
+Push message to queue.Queue
+Background worker drains queue
+and writes to disk
+Next kernel (non-blocking)
+Async
+Figure 1: Synchronous .item() logging (left) vs. asynchronous logging queue (right).
+The async approach eliminates GPU stalls.
+1.3
+Code Implementation
+The following listing provides a robust, thread-safe asynchronous logger using Python’s
+queue.Queue and a daemon thread. It can be used inside a distributed training loop
+without blocking.
+1 import
+threading
+2 import
+queue
+3 import
+time
+4 import
+datetime
+5
+6 class
+AsyncLogger:
+7
+def
+__init__(self , filename="train.log"):
+8
+self.log_queue = queue.Queue ()
+9
+self.worker = threading.Thread(target=self._flush , args =(
+filename ,), daemon=True)
+10
+self.worker.start ()
+11
+12
+def log(self , message , level="INFO"):
+13
+timestamp = datetime.datetime.now().isoformat ()
+14
+self.log_queue.put_nowait(f"{timestamp} [{ level }] {message}")
+15
+16
+def _flush(self , filename):
+17
+with open(filename , "a") as f:
+18
+while
+True:
+19
+try:
+20
+msg = self.log_queue.get(timeout =0.2)
+21
+f.write(msg + "\n")
+22
+f.flush ()
+23
+except
+queue.Empty:
+24
+pass
+25
+26 # Usage in training
+loop
+27 logger = AsyncLogger ()
+4
+
+28 for epoch in range (10):
+29
+# ...
+forward/backward
+30
+loss = compute_loss ()
+31
+logger.log(f"Epoch {epoch}, loss {loss.item ():.4f}")
+Listing 1: Async logger with daemon thread, label=lst:asynclogger
+1.4
+Production Tools: MLflow & PyTorch Lightning Cluster Track-
+ing
+MLflow Tracking provides a centralized server for logging experiments, parameters, met-
+rics, and artifacts. Its Python API is asynchronous by design, using a background worker
+to batch REST API calls. PyTorch Lightning’s Trainer integrates MLflow via a sim-
+ple callback, automatically capturing GPU stats, learning rates, and loss curves. For
+massive-scale jobs, Lightning supports cluster-aware logging that tags logs with the node
+and rank, enabling root-cause analysis after failures.
+1.5
+Real-World Incident: Silent GPU Stall Due to Synchronous
+Logging
+Situation: An 8-GPU cluster training a large language model suddenly dropped GPU
+utilization from 98% to 30%. Throughput fell from 1.2k tokens/s to 300 tokens/s. The
+training loop included a line loss_val = loss.item() immediately after computing the
+loss, followed by a verbose log message to a local file.
+Diagnosis: Profiling with NVIDIA Nsight revealed that the .item() call forced a
+cudaStreamSynchronize on the default stream, stalling all 8 GPUs while the CPU per-
+formed a slow synchronous disk write. Because the logging was inside the main training
+loop, every iteration was serialised. The disk I/O latency (5-10 ms per write) dominated,
+causing massive idle bubbles.
+Resolution: The team replaced the synchronous log write with the AsyncLogger
+class above. The .item() call was kept but decoupled from the disk write by enqueuing
+only the floating-point value to the logger. GPU utilization immediately recovered to
+95%, and throughput returned to normal.
+The incident underscored the necessity of
+isolating I/O from the compute-critical path.
+2
+Module 4.2 — High-Performance Model Serving
+2.1
+The Physics of Serving: Roofline Model & Arithmetic Inten-
+sity
+The performance of any model-serving kernel is bounded by the hardware’s memory
+bandwidth and peak compute. The Roofline Model elegantly captures this. Define
+arithmetic intensity I =
+FLOPs
+Bytes transferred from DRAM. The attainable FLOP/s is:
+Performance = min (Pcompute, Bmemory × I) ,
+where Pcompute is the peak floating-point operations per second (e.g., 312 TFLOPS for an
+NVIDIA H100) and Bmemory is the peak memory bandwidth (e.g., 3.35 TB/s). The ridge
+point is Iridge = Pcompute/Bmemory.
+5
+
+Autoregressive transformer inference is profoundly memory-bound. Each token gen-
+eration step must read the entire key-value (KV) cache from memory. For a single at-
+tention head with dimension dk and sequence length L, the bytes read are approximately
+2 × L × dk × num_heads (keys and values). The compute is ≈2 × L × dk × num_heads
+for the dot-product and a softmax. Thus I ≈1, far below the ridge point for modern
+accelerators. Consequently, inference throughput is capped by memory bandwidth, not
+FLOPs.
+2.2
+KV-Cache Memory Fragmentation
+Each autoregressive step appends new key and value tensors to the KV-cache. Naive
+implementations pre-allocate a contiguous region of size Lmax × 2 × dk × num_heads ×
+num_layers. For a 70B model with Lmax = 2048, this can consume over 30 GB per
+request. However, most real-world requests are much shorter (median 128 tokens), lead-
+ing to internal fragmentation: memory reserved but unused. When requests complete
+and free their cache, external fragmentation arises, leaving holes unusable by larger re-
+quests. The result is out-of-memory (OOM) crashes even when total free memory appears
+sufficient.
+2.3
+PagedAttention: Virtual Memory for KV-Cache
+vLLM introduced PagedAttention, which maps logical KV-cache blocks (e.g., 16-token
+blocks) onto non-contiguous physical GPU memory blocks, managed by a block table,
+analogous to virtual memory paging. This eliminates both internal and external fragmen-
+tation. The block size is a critical parameter: too small increases metadata overhead; too
+large wastes memory.
+2.3.1
+Visualizing PagedAttention Block Allocation
+Figure 2 shows how logical token positions are mapped through a block table to scattered
+physical blocks.
+B0
+tokens 0-15
+B1
+free
+B2
+tokens 16-31
+B3
+free
+B4
+tokens 32-47
+Logical KV Cache
+tokens 0-47
+Block Table
+[0, 2, 4]
+Figure 2: PagedAttention: non-contiguous physical block allocation via a block table.
+2.4
+Code: KV-Cache Appending in Causal Self-Attention
+Below is a simplified PyTorch implementation of a single attention head that updates the
+cache during autoregressive inference.
+1 import
+torch
+2
+6
+
+3 def
+causal_step(x_new , W_q , W_k , W_v , cache):
+4
+# x_new: (batch , 1, d_model)
+5
+K_new = x_new @ W_k
+# (B, 1, d_k)
+6
+V_new = x_new @ W_v
+7
+if cache is None:
+8
+cache_K , cache_V = K_new , V_new
+9
+else:
+10
+cache_K = torch.cat([ cache [0], K_new], dim =1)
+11
+cache_V = torch.cat([ cache [1], V_new], dim =1)
+12
+Q = x_new @ W_q
+13
+d_k = K_new.size (-1)
+14
+scores = (Q @ cache_K.transpose (-2,-1)) / (d_k ** 0.5)
+15
+attn = torch.softmax(scores , dim=-1)
+16
+out = attn @ cache_V
+17
+return out , (cache_K , cache_V)
+Listing 2: Dynamic KV-cache append during causal attention, label=lst:kvcacheappend
+2.5
+Production Tools: vLLM and Continuous Batching
+vLLM is an open-source serving system that implements PagedAttention and continuous
+batching. It allows requests to join or leave the batch dynamically, rather than waiting
+for the whole batch to finish. This drastically improves throughput and GPU utilisation,
+especially under fluctuating workloads.
+2.6
+Real-World Incident: Cascading OOM Under Dynamic Batch-
+ing
+Situation: A text-generation service using vanilla HuggingFace Transformers with static
+KV-cache allocation experienced frequent OOM failures when traffic spiked. The cache
+was pre-allocated for a max length of 2048 tokens, consuming 24 GB per request. Under
+load, concurrent requests quickly exhausted the 40 GB GPU memory.
+Diagnosis: Memory profiling revealed that over 70% of the allocated KV-cache was
+unused because typical requests generated fewer than 200 tokens. The large pre-allocation
+caused severe internal fragmentation. Moreover, when requests finished, their freed con-
+tiguous blocks could not satisfy incoming requests, leading to external fragmentation.
+Resolution: The team migrated to vLLM with a block size of 16 tokens. Memory
+overhead dropped by 60%, and the number of concurrent requests supported on the same
+GPU increased from 4 to 12. OOM crashes ceased entirely. The incident highlighted the
+importance of virtual-memory-inspired memory management in LLM serving.
+3
+Module 4.3 — Model Compression & Hardware Op-
+timization
+3.1
+Quantization Mathematics: Scale and Zero-Point
+Asymmetric uniform quantization maps a real tensor r ∈[rmin, rmax] to an integer
+q ∈[qmin, qmax] (typically 0–255 for INT8). The mapping is affine:
+r = S(q −Z),
+7
+
+where S = rmax−rmin
+qmax−qmin is the scale and Z = qmin −rmin
+S
+(rounded) is the zero-point. For
+symmetric quantization, Z = 0 and the range is symmetric, e.g., [−127, 127]. Asymmetric
+quantization better handles ReLU outputs that are strictly non-negative.
+The quantization error (MSE) for a tensor X with n elements is:
+MSE = 1
+n
+n
+X
+i=1
+(xi −ˆxi)2,
+ˆxi = S(qi −Z).
+3.2
+Activation Outliers and SmoothQuant
+In large language models (typically >6.7B parameters), certain hidden state channels
+exhibit much larger magnitudes than others—outliers. These outliers cause rmax to be
+an order of magnitude higher than the typical activation range, severely coarsening the
+quantization bins for the vast majority of values. SmoothQuant addresses this by smooth-
+ing the activation outliers into the adjacent weight channels, using a per-channel scaling
+factor derived from the activation statistics. After smoothing, the activations become
+well-balanced, allowing high-precision INT8 quantization without perplexity degradation.
+3.3
+Visualizing Activation Distributions
+Figure 3 contrasts an activation distribution with extreme outliers versus the same dis-
+tribution after SmoothQuant smoothing.
+0
+2
+4
+6
+8
+10
+0
+2
+4
+6
+8
+Activation value
+Density
+Original (with outlier)
+After SmoothQuant
+Figure 3: Activation distribution before and after SmoothQuant. The outlier at 10.0 is
+absorbed into weights.
+3.4
+Code: Asymmetric Quantization & MSE Calculation
+The following PyTorch function implements asymmetric INT8 quantization and returns
+the reconstruction MSE.
+1 import
+torch
+2
+3 def
+asymmetric_quant (x, qmin=0, qmax =255):
+4
+rmin , rmax = x.min(), x.max()
+5
+S = (rmax - rmin) / (qmax - qmin)
+6
+Z = qmin - torch.round(rmin / S)
+7
+q = torch.clamp(torch.round(x / S + Z), qmin , qmax).to(torch.int8)
+8
+return q, S, Z
+9
+10 def
+dequant(q, S, Z):
+8
+
+11
+return S * (q.float () - Z)
+12
+13 x = torch.randn (1000) * 2.0 + 1.0
+# skewed
+distribution
+14 q, S, Z = asymmetric_quant (x)
+15 x_hat = dequant(q, S, Z)
+16 mse = torch.mean ((x - x_hat) ** 2)
+17 print(f"MSE: {mse :.6f}")
+Listing 3: Asymmetric INT8 quantization with MSE, label=lst:quant
+3.5
+Production Tools: ONNX to TensorRT Pipeline
+The ONNX (Open Neural Network Exchange) format provides an intermediate repre-
+sentation for models.
+NVIDIA TensorRT takes an ONNX graph, optimizes it using
+layer fusion, kernel auto-tuning, and precision calibration (e.g., INT8), and generates a
+platform-specific inference engine. The typical pipeline: PyTorch →ONNX export →
+TensorRT builder →optimized engine. For INT8, a calibration step uses a representa-
+tive dataset to compute dynamic ranges for each tensor, avoiding per-batch quantization
+overhead.
+3.6
+Real-World Incident: Perplexity Explosion in 13B Model
+Situation: A team quantized a 13B-parameter LLM to INT8 using naive per-tensor
+quantization. The perplexity on a validation set jumped from 10.2 (FP16) to 45.8, ren-
+dering the model unusable.
+Diagnosis: Activation statistics revealed that a handful of channels had activations
+peaking at 80 while the 99th percentile was 4. The large rmax inflated S, causing most
+values to be quantized to the same bin. This is the classic activation outlier problem.
+Resolution: Applying SmoothQuant (implemented via the smoothquant library) mi-
+grated the outlier magnitude into the corresponding weight rows, balancing the activation
+distribution. After re-quantization, the perplexity dropped to 10.4, within 0.2 of FP16.
+The team integrated SmoothQuant into the TensorRT calibration pipeline, making it a
+standard step for all future LLM deployments.
+4
+Module 4.4 — Enterprise RAG & Vector Database
+Internals
+4.1
+Non-Metric Vector Search & Similarity Measures
+Retrieval-Augmented Generation (RAG) relies on fast vector search to find relevant doc-
+uments. Most vector databases support cosine similarity, which after L2 normalization
+reduces to inner product:
+cos(a, b) =
+a · b
+∥a∥∥b∥
+∥a∥=∥b∥=1
+−−−−−−→
+a · b.
+A query q is matched against a database of N normalized vectors {vi}, selecting the
+top-k with highest q · vi.
+9
+
+4.2
+Approximate Nearest Neighbour Indices
+IVF (Inverted File Index): The vector space is partitioned into C Voronoi cells via
+k-means. A query probes the nearest P cells, reducing search scope from N to ≈N × P
+C.
+HNSW (Hierarchical Navigable Small World): A multi-layer graph is built
+where each node appears in layer ℓwith probability 1/Mℓ. The top layers are sparse;
+the bottom layer is the dense full graph. Search begins at a top-layer entry point, greed-
+ily moves to the nearest neighbour, descends to the next layer, and repeats, achieving
+logarithmic complexity.
+Figure 4 visualizes the HNSW search traversal.
+Layer 2 (sparse)
+A
+B
+C
+Layer 1
+A
+B
+C
+Layer 0 (dense)
+A
+B
+C
+D
+E
+Q
+Figure 4: HNSW search: the query descends from sparse top layers to the dense bottom
+layer, greedily following the nearest neighbour at each level.
+4.3
+Dense-Sparse Hybrid Retrieval
+Modern RAG pipelines combine dense vector search with sparse lexical search (BM25).
+The two result sets are merged using Reciprocal Rank Fusion (RRF):
+RRF(d) =
+X
+retriever r
+1
+k + rankr(d),
+where k is a constant (commonly 60). A cross-encoder then re-ranks the top candidates,
+providing richer semantic scoring at the cost of higher latency.
+4.4
+Code: Mini Vector DB with Cosine Similarity
+The following NumPy-only implementation provides exact nearest-neighbour search with
+L2 normalization.
+1 import
+numpy as np
+2
+3 class
+MiniVectorDB:
+4
+def
+__init__(self):
+5
+self.vectors = []
+6
+self.metadata = []
+7
+10
+
+8
+def insert(self , vec , meta=None):
+9
+vec = np.array(vec , dtype=np.float32)
+10
+norm = np.linalg.norm(vec)
+11
+self.vectors.append(vec / norm)
+12
+self.metadata.append(meta)
+13
+14
+def search(self , query_vec , top_k =5):
+15
+q = np.array(query_vec , dtype=np.float32)
+16
+q = q / np.linalg.norm(q)
+17
+vecs = np.array(self.vectors)
+# (N, d)
+18
+sims = q @ vecs.T
+# cosine
+similarity
+19
+idx = np.argsort(-sims)[: top_k]
+20
+return [(idx[i], self.metadata[idx[i]], sims[idx[i]]) for i in
+range(top_k)]
+21
+22 # Usage
+23 db = MiniVectorDB ()
+24 db.insert ([0.1 , 0.2], "doc1")
+25 db.insert ([0.3 , 0.4], "doc2")
+26 results = db.search ([0.15 , 0.25] , top_k =2)
+27 print(results)
+Listing 4: Mini Vector DB, label=lst:minivec
+4.5
+Production Tools: Milvus, Pinecone, and Weaviate
+These vector databases implement the indices described above (IVF, HNSW) and offer
+managed cloud services with native RAG integrations, metadata filtering, and hybrid
+search.
+4.6
+Real-World Incident: Vector Drift & Embedding Model Hot-Swap
+Situation: A customer-facing chatbot using RAG experienced a dramatic drop in re-
+trieval accuracy after the embedding model was upgraded from all-MiniLM-L6-v2 to
+all-mpnet-base-v2. Users reported that previously relevant documents were no longer
+surfaced.
+Diagnosis: The new embeddings resided in a different manifold (different dimension-
+ality and statistical distribution). Cosine similarity against the old index was meaning-
+less. The vector database had over a million vectors indexed with the old embedding.
+Re-indexing would take hours, causing unacceptable downtime.
+Resolution: The team implemented a staged rollout: both the old and new em-
+bedding models ran in parallel. New documents were indexed with the new model, while
+queries were sent to both systems and results merged via RRF. This allowed a gradual
+transition. Eventually, a background re-indexing job migrated old documents. The inci-
+dent led to a design policy: embedding model versions must be stored as metadata, and
+the system must support multiple concurrent indices with versioned routing.
+11
+
+5
+Module 4.5 — Full-Scale Observability, Drift & Mon-
+itoring
+5.1
+Data Drift vs. Concept Drift
+Data drift (covariate shift) occurs when P(X) changes but P(Y |X) remains constant.
+For example, user demographics shift, but the model’s decision boundary is still valid.
+Concept drift occurs when P(Y |X) changes, i.e., the underlying relationship between
+features and target shifts. Example: a previously offensive phrase becomes acceptable
+slang.
+The Population Stability Index (PSI) quantifies data drift.
+Given a baseline
+distribution B and production distribution P across K bins:
+PSI =
+K
+X
+k=1
+(Pk −Bk) ln
+ Pk
+Bk
+
+.
+A PSI < 0.1 indicates negligible drift, 0.1–0.25 moderate, and > 0.25 significant drift.
+PSI is widely used for monitoring feature distributions in production.
+5.2
+Visualizing Drift
+Figure 5 plots a baseline distribution against a production distribution exhibiting a clear
+shift.
+−2
+0
+2
+4
+0
+0.2
+0.4
+Feature value
+Density
+Baseline
+Production
+Figure 5: Covariate shift: the production distribution has drifted to the right.
+5.3
+Code: PSI Calculation in NumPy
+1 import
+numpy as np
+2
+3 def psi(baseline , production , bins =10):
+4
+_, edges = np.histogram(baseline , bins=bins)
+5
+B, _ = np.histogram(baseline , bins=edges)
+6
+P, _ = np.histogram(production , bins=edges)
+7
+B = B / B.sum() + 1e-10
+8
+P = P / P.sum() + 1e-10
+9
+return np.sum((P - B) * np.log(P / B))
+10
+11 baseline = np.random.normal (0, 1, 1000)
+12 production = np.random.normal (0.5, 1.2, 1000)
+12
+
+13 print(f"PSI: {psi(baseline , production):.4f}")
+Listing 5: PSI computation, label=lst:psi
+5.4
+Architecture: Automated Canary Rollback
+Canary deployment routes a small fraction of traffic to the new model version while the
+majority continues with the stable version. Metrics (latency, error rate, token accuracy)
+are scraped by Prometheus and visualised in Grafana. An alert rule triggers a rollback
+webhook if the error rate spikes beyond a threshold. The load balancer then removes the
+canary endpoints.
+Load Balancer
+(HAProxy / Envoy)
+Stable v1
+95% traffic
+Canary v2
+5% traffic
+Prometheus
+metrics scrape
+Grafana
+alert rule
+Rollback webhook
+remove canary
+/metrics
+update config
+Figure 6: Automated canary deployment with Prometheus, Grafana, and rollback web-
+hook.
+5.5
+Production Tools: Prometheus & Grafana
+Prometheus scrapes /metrics endpoints exposed by the model server (e.g., vLLM, FastAPI).
+Time-series data on request latency, throughput, GPU utilisation, and memory usage is
+stored in its TSDB. Grafana provides dashboards with real-time graphs and alerting rules
+that trigger webhooks to CI/CD pipelines for automated rollbacks.
+13
+
+5.6
+Real-World Incident: Canary Hardware Mismatch
+Situation: A team canaried a new model version on a GPU node with an older archi-
+tecture (A100) while production ran on H100s. The canary showed excellent latency and
+error rates. After full rollout to the H100 fleet, latency spiked by 40% and OOM errors
+appeared.
+Diagnosis: The canary’s A100 had different memory bandwidth and compute char-
+acteristics. The model had been optimised (e.g., kernel autotuning) specifically for that
+GPU, and the H100-optimised plan differed. The canary test was invalid because the
+hardware was not identical.
+Resolution: The canary was re-deployed on a dedicated H100 node.
+The team
+added hardware-fingerprint checks to the deployment pipeline, ensuring that canary and
+production run on identical instance types. The incident reinforced that canary validation
+must replicate production infrastructure precisely.
+6
+Conclusion
+This report has dissected the five critical pillars of production AI systems. Asynchronous
+logging eliminates host-device synchronisation stalls, restoring GPU utilisation. Hardware-aware
+serving with PagedAttention defeats KV-cache fragmentation and OOM failures. Quan-
+tization, especially with SmoothQuant, enables efficient deployment of giant models.
+Enterprise RAG systems leverage vector databases and hybrid retrieval to deliver accu-
+rate, context-rich generations. Finally, continuous observability with PSI drift detection
+and automated canary rollbacks ensures resilience in the face of changing data and mod-
+els. Mastery of these topics is essential for any AI systems engineer aspiring to deploy
+large-scale, reliable, and cost-effective ML services.
+14
