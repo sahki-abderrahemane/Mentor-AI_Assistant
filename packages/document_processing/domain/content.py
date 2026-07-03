@@ -1,7 +1,3 @@
-"""
-packages/document_processing/domain/content.py
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -9,6 +5,52 @@ from typing import Any
 from pydantic import Field
 
 from .base import BaseEntity, MentorModel
+
+
+
+class PageContent(MentorModel):
+    """
+    Represents the extracted content of a single PDF page.
+    """
+
+    page_number: int = Field(
+        ge=1,
+        description="1-based page number."
+    )
+
+    text: str = Field(
+        description="Raw extracted text for this page."
+    )
+
+    layout: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Raw PyMuPDF page dictionary."
+    )
+
+    word_count: int = Field(
+        ge=0,
+        description="Number of words on this page."
+    )
+
+class HeadingCandidate(MentorModel):
+    """
+    Represents a potential section heading detected in a document.
+    """
+
+    text: str = Field(
+        description="Heading text."
+    )
+
+    line_number: int = Field(
+        ge=0,
+        description="Line index in the cleaned document."
+    )
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Confidence score."
+    )
 
 
 class Section(MentorModel):
@@ -24,17 +66,29 @@ class Section(MentorModel):
         ge=1,
         description="Heading level (1 = top-level section)."
     )
+    line_start: int = Field(
+        ge=0,
+        description="Heading line index."
+    )
+
+    line_end: int = Field(
+        ge=0,
+        description="Last line belonging to this section."
+    )
 
     text: str = Field(
+        default="",
         description="Section text."
     )
 
     page_start: int = Field(
+        default=1,
         ge=1,
         description="Starting page."
     )
 
     page_end: int = Field(
+        default=1,
         ge=1,
         description="Ending page."
     )
@@ -98,6 +152,12 @@ class DocumentContent(MentorModel):
     cleaned_text: str | None = Field(
         default=None,
         description="Normalized text."
+    )
+
+
+    pages: list[PageContent] = Field(
+        default_factory=list,
+        description="Extracted content for every page."
     )
 
     sections: list[Section] = Field(
