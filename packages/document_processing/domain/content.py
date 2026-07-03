@@ -42,7 +42,7 @@ class Section(MentorModel):
 
 class KnowledgeUnit(BaseEntity):
     """
-    Smallest reusable semantic unit in NexusAI.
+    Smallest reusable semantic unit in MentorAI.
     """
 
     text: str = Field(

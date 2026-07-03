@@ -1,36 +1,26 @@
-"""
-packages/document_processing/extractors/pdf/metadata_extractor.py
-"""
-
-from __future__ import annotations
-
 from pathlib import Path
 
-from document_processing.domain.document import Document
-from document_processing.extractors.base_extractor import BaseExtractor
+import fitz
+
+from document_processing.domain.metadata import DocumentMetadata
+from document_processing.mappers.metadata_mapper import MetadataMapper
 
 
-class PDFMetadataExtractor(BaseExtractor):
-    """
-    Extracts metadata from PDF documents.
-    """
+class PDFMetadataExtractor:
 
-    def extract(self, document: Document) -> Document:
-        """
-        Extract metadata from a PDF and populate
-        document.metadata.
-        """
+    def extract(
+        self,
+        file_path: Path,
+        category: str | None = None,
+        source: str | None = None,
+        url: str | None = None,
+    ) -> DocumentMetadata:
 
-        pdf_path: Path = document.source_path
-
-        if not pdf_path.exists():
-            raise FileNotFoundError(pdf_path)
-
-        # TODO:
-        # - Compute SHA-256 checksum
-        # - Read embedded PDF metadata
-        # - Determine page count
-        # - Populate DocumentMetadata
-        # - Append ProcessingEvent
-
-        return document
+        with fitz.open(file_path) as pdf:
+            return MetadataMapper.from_pdf(
+                pdf=pdf,
+                file_path=file_path,
+                category=category,
+                source=source,
+                url=url,
+            )

@@ -3,8 +3,8 @@ packages/document_processing/domain/metadata.py
 """
 
 from __future__ import annotations
-
 from pydantic import Field
+from datetime import datetime
 
 from .base import MentorModel
 from .enums import DocumentFormat, SourceType
@@ -42,6 +42,7 @@ class DocumentInfo(MentorModel):
         default=None,
         description="Document abstract.",
     )
+    creation_date: datetime | None = None
 
 
 class FileInfo(MentorModel):
@@ -49,10 +50,6 @@ class FileInfo(MentorModel):
 
     filename: str = Field(
         description="Original filename."
-    )
-
-    format: DocumentFormat = Field(
-        description="Document format."
     )
 
     extension: str = Field(

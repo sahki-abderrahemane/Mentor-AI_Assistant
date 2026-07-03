@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class MentorModel(BaseModel):
     """
-    Base model used throughout NexusAI.
+    Base model used throughout MentorAI.
     """
 
     model_config = ConfigDict(
