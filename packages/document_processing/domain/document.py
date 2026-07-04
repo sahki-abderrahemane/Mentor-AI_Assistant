@@ -20,10 +20,10 @@ class Document(BaseEntity):
     through the Document Processing Engine.
     """
 
-    metadata: DocumentMetadata = Field(
+    metadata: DocumentMetadata | None = Field(
+        default=None,
         description="Document metadata."
-    )
-
+        )
     content: DocumentContent = Field(
         default_factory=DocumentContent,
         description="Document textual content."

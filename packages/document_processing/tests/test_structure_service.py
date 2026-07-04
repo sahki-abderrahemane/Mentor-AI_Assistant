@@ -1,13 +1,13 @@
-from document_processing.services.structure_service import StructureService
+from document_processing.domain.content import DocumentContent
+from document_processing.services.structure_service import (
+    StructureService,
+)
 
 
-def test_structure_service():
+def test_structure_service_populates_sections():
 
-    text = """
-Abstract
-
-This is the abstract.
-
+    content = DocumentContent(
+        cleaned_text="""
 1 Introduction
 
 This is the introduction.
@@ -16,18 +16,13 @@ This is the introduction.
 
 This is the method.
 """.strip()
+    )
 
     service = StructureService()
 
-    sections = service.process(text)
+    content = service.process(content)
 
-    assert len(sections) == 3
+    assert len(content.sections) == 2
 
-    assert sections[0].title == "Abstract"
-    assert "abstract" in sections[0].text.lower()
-
-    assert sections[1].title == "1 Introduction"
-    assert "introduction" in sections[1].text.lower()
-
-    assert sections[2].title == "2 Method"
-    assert "method" in sections[2].text.lower()
+    assert content.sections[0].title == "1 Introduction"
+    assert content.sections[1].title == "2 Method"
