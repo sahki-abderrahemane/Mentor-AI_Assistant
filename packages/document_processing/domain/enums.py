@@ -30,3 +30,8 @@ class SourceType(str, Enum):
     ARXIV = "arxiv"
     URL = "url"
     MANUAL = "manual"
+
+class ExportFormat(str, Enum):
+    JSON = "json"
+    JSONL = "jsonl"
+    CSV = "csv"

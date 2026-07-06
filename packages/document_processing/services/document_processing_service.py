@@ -1,7 +1,3 @@
-"""
-packages/document_processing/services/document_processing_service.py
-"""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -69,7 +65,7 @@ class DocumentProcessingService(BaseService):
         action: Callable[[], Any],
     ) -> Any:
         """
-        Execute one processing stage while recording its execution.
+        Executes one processing stage while recording its execution.
         """
 
         started = datetime.now(UTC)
@@ -120,6 +116,7 @@ class DocumentProcessingService(BaseService):
 
         document = Document(
             source_path=pdf_path,
+            processing_stage=ProcessingStage.INGESTED,
         )
 
         self._run_stage(
