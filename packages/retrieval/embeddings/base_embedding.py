@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -27,6 +27,14 @@ class BaseEmbeddingModel(
 
         self.config = config
 
+    @abstractmethod
+    def embed_documents(
+        self,
+        texts: list[str],   
+        ) -> list[Embedding]:
+        """
+        Generate embeddings for a list of texts.
+        """
     def _normalize(
         self,
         vector: list[float],
