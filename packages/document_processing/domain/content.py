@@ -93,7 +93,6 @@ class Section(MentorModel):
         description="Ending page."
     )
 
-
 class KnowledgeUnit(BaseEntity):
     """
     Smallest reusable semantic unit in MentorAI.
@@ -110,6 +109,21 @@ class KnowledgeUnit(BaseEntity):
     subsection: str | None = Field(
         default=None,
         description="Optional subsection."
+    )
+
+    document_id: str | None = Field(
+        default=None,
+        description="Identifier of the source document."
+    )
+
+    category: str | None = Field(
+        default=None,
+        description="Knowledge Unit category."
+    )
+
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Knowledge Unit tags."
     )
 
     page_start: int = Field(
@@ -137,7 +151,6 @@ class KnowledgeUnit(BaseEntity):
         default_factory=dict,
         description="Additional KU metadata."
     )
-
 
 class DocumentContent(MentorModel):
     """

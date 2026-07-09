@@ -1,8 +1,11 @@
+from unittest import result
+
 from retrieval.embeddings.config import EmbeddingConfig
 from retrieval.embeddings.sentence_transformer_embedding import (
     SentenceTransformerEmbedding,
 )
 
+from retrieval.retrievers.parent_retriever import ParentRetriever
 from retrieval.vectorstores.config import VectorStoreConfig
 from retrieval.vectorstores.faiss_vector_store import (
     FaissVectorStore,
@@ -37,7 +40,9 @@ from document_processing.domain.content import (
     KnowledgeUnit,
     Section,
 )
-
+from retrieval.citations.default_citation_builder import (
+    DefaultCitationBuilder,
+)
 
 def build_document():
 
@@ -98,11 +103,13 @@ def test_hybrid_retriever(tmp_path):
     dense = DenseRetriever(
         embedding_model,
         vector_store,
+        citation_builder=DefaultCitationBuilder(),
     )
-
+    parent_retriever = ParentRetriever(dense)
     hybrid = HybridRetriever(
-        retrievers=[dense],
+        retrievers=[dense,parent_retriever],
         ranker=SimilarityRanker(),
+        citation_builder=DefaultCitationBuilder(),
     )
 
     result = hybrid.retrieve(
@@ -117,3 +124,11 @@ def test_hybrid_retriever(tmp_path):
     assert result.metadata.strategy == RetrievalStrategy.HYBRID
     assert len(result.retrieved_units) > 0
     assert result.metadata.returned_count == len(result.retrieved_units)
+    assert len(result.citations) == len(
+    result.retrieved_units,
+)
+
+    assert (
+    result.citations[0].retrieved_unit
+    == result.retrieved_units[0]
+)

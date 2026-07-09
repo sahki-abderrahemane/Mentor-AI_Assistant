@@ -30,6 +30,9 @@ from retrieval.domain.search_result import (
     SearchResult,
 )
 
+from retrieval.contracts.citation_builder import (
+    CitationBuilder,
+)
 
 class HybridRetriever(Retriever):
     """
@@ -40,10 +43,12 @@ class HybridRetriever(Retriever):
         self,
         retrievers: list[Retriever],
         ranker: Ranker,
+        citation_builder: CitationBuilder,
     ) -> None:
 
         self.retrievers = retrievers
         self.ranker = ranker
+        self.citation_builder = citation_builder
 
     def name(
         self,
@@ -80,6 +85,10 @@ class HybridRetriever(Retriever):
             retrieved_units,
         )
 
+        citations = self.citation_builder.build_citations(
+            request.query,
+            ranked_units,
+        )
         finished = datetime.now(UTC)
 
         latency = int(
@@ -120,7 +129,7 @@ class HybridRetriever(Retriever):
         return SearchResult(
             query=request.query,
             retrieved_units=ranked_units,
-            citations=[],
+            citations=citations,
             metadata=metadata,
             processing_history=history,
         )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from retrieval.contracts.citation_builder import CitationBuilder
 from retrieval.contracts.embedding_model import (
     EmbeddingModel,
 )
@@ -51,10 +52,12 @@ class DenseRetriever(Retriever):
         self,
         embedding_model: EmbeddingModel,
         vector_store: VectorStore,
+        citation_builder: CitationBuilder,
     ) -> None:
 
         self.embedding_model = embedding_model
         self.vector_store = vector_store
+        self.citation_builder = citation_builder
 
     def name(
         self,
@@ -128,6 +131,69 @@ class DenseRetriever(Retriever):
 
         return retrieved_units, history
     
+    def _apply_filters(
+        self,
+        retrieved_units: list[RetrievedKnowledgeUnit],
+        request: SearchRequest,
+    ) -> list[RetrievedKnowledgeUnit]:
+        """
+        Apply query filters to retrieved Knowledge Units.
+        """
+
+        filters = request.query.filters
+
+        filtered = retrieved_units
+
+        if filters.document_ids:
+            filtered = [
+                unit
+                for unit in filtered
+                if (
+                    unit.knowledge_unit.document_id is not None
+                    and unit.knowledge_unit.document_id
+                    in filters.document_ids
+                )
+            ]
+
+        if filters.categories:
+            filtered = [
+                unit
+                for unit in filtered
+                if (
+                    unit.knowledge_unit.category is not None
+                    and unit.knowledge_unit.category
+                    in filters.categories
+                )
+            ]
+
+        if filters.tags:
+            filtered = [
+                unit
+                for unit in filtered
+                if any(
+                    tag in filters.tags
+                    for tag in unit.knowledge_unit.tags
+                )
+            ]
+
+        if filters.metadata:
+            filtered = [
+                unit
+                for unit in filtered
+                if all(
+                    unit.knowledge_unit.metadata.get(key) == value
+                    for key, value in filters.metadata.items()
+                )
+            ]
+
+        for index, unit in enumerate(
+            filtered,
+            start=1,
+        ):
+            unit.rank = index
+
+        return filtered
+    
     def retrieve(
         self,
         request: SearchRequest,
@@ -137,7 +203,12 @@ class DenseRetriever(Retriever):
 
         retrieved_units, history = self._retrieve_units(
             request,
-        )
+            )
+        candidate_count = len(retrieved_units)
+        retrieved_units = self._apply_filters(
+            retrieved_units,
+            request,
+            )
 
         finished = datetime.now(UTC)
 
@@ -151,7 +222,7 @@ class DenseRetriever(Retriever):
             vector_store=VectorStoreType.FAISS,
             embedding_model=self.embedding_model.model_name(),
             ranking_method=RankingMethod.SIMILARITY,
-            candidate_count=len(retrieved_units),
+            candidate_count=candidate_count,
             returned_count=len(retrieved_units),
             latency_ms=latency,
         )
@@ -167,7 +238,10 @@ class DenseRetriever(Retriever):
         return SearchResult(
             query=request.query,
             retrieved_units=retrieved_units,
-            citations=[],
+            citations=self.citation_builder.build_citations(
+                request.query,
+                retrieved_units,
+            ),
             metadata=metadata,
             processing_history=history,
         )

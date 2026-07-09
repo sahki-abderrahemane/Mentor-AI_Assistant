@@ -5,7 +5,6 @@ from document_processing.domain.content import (
     KnowledgeUnit,
     Section,
 )
-
 from document_processing.domain.document import (
     Document,
 )
@@ -13,12 +12,9 @@ from document_processing.domain.document import (
 from retrieval.domain.enums import (
     RetrievalStrategy,
 )
-
 from retrieval.domain.query import (
     Query,
-    SearchFilter,
 )
-
 from retrieval.domain.search_request import (
     SearchRequest,
 )
@@ -26,7 +22,6 @@ from retrieval.domain.search_request import (
 from retrieval.embeddings.config import (
     EmbeddingConfig,
 )
-
 from retrieval.embeddings.sentence_transformer_embedding import (
     SentenceTransformerEmbedding,
 )
@@ -34,13 +29,24 @@ from retrieval.embeddings.sentence_transformer_embedding import (
 from retrieval.indexing.config import (
     IndexingConfig,
 )
-
 from retrieval.indexing.indexing_service import (
     IndexingService,
 )
 
+from retrieval.query_expanders.simple_query_expander import (
+    SimpleQueryExpander,
+)
+
+from retrieval.rankers.similarity_ranker import (
+    SimilarityRanker,
+)
+
 from retrieval.retrievers.dense_retriever import (
     DenseRetriever,
+)
+
+from retrieval.retrievers.multi_query_retriever import (
+    MultiQueryRetriever,
 )
 
 from retrieval.vectorstores.config import (
@@ -50,7 +56,6 @@ from retrieval.vectorstores.config import (
 from retrieval.vectorstores.faiss_vector_store import (
     FaissVectorStore,
 )
-
 from retrieval.citations.default_citation_builder import (
     DefaultCitationBuilder,
 )
@@ -68,22 +73,22 @@ def build_document() -> Document:
     )
 
     ku1 = KnowledgeUnit(
-        text="Artificial Intelligence is the simulation of human intelligence.",
+        text="Machine learning is a subset of artificial intelligence.",
         section=section,
         document_id="doc-ai",
         category="ai",
-        tags=["ai", "intelligence"],
+        tags=["ai", "ml"],
         page_start=1,
         page_end=1,
-        word_count=8,
+        word_count=9,
     )
 
     ku2 = KnowledgeUnit(
-        text="Machine Learning is a subset of Artificial Intelligence.",
+        text="Deep learning is based on neural networks.",
         section=section,
-        document_id="doc-ml",
-        category="ml",
-        tags=["ml", "learning"],
+        document_id="doc-ai",
+        category="ai",
+        tags=["deep-learning"],
         page_start=1,
         page_end=1,
         word_count=8,
@@ -103,7 +108,7 @@ def build_document() -> Document:
     return document
 
 
-def test_dense_retriever(tmp_path):
+def test_multi_query_retriever(tmp_path):
 
     embedding_model = SentenceTransformerEmbedding(
         EmbeddingConfig(),
@@ -121,110 +126,63 @@ def test_dense_retriever(tmp_path):
         vector_store=vector_store,
         config=IndexingConfig(),
     )
+
     indexing.index_document(
         build_document(),
     )
 
-    retriever = DenseRetriever(
+    dense_retriever = DenseRetriever(
         embedding_model=embedding_model,
         vector_store=vector_store,
         citation_builder=DefaultCitationBuilder(),
     )
 
-    request = SearchRequest(
-        query=Query(
-            text="What is artificial intelligence?",
-            top_k=2,
-        ),
-        strategy=RetrievalStrategy.DENSE,
-    )
-
-    result = retriever.retrieve(
-        request,
-    )
-
-    assert result.query.text == request.query.text
-
-    assert len(result.retrieved_units) == 2
-
-    assert (
-        result.metadata.returned_count == 2
-    )
-
-    assert (
-        result.metadata.strategy
-        == RetrievalStrategy.DENSE
-    )
-
-    assert (
-        len(result.processing_history)
-        == 5
-    )
-    assert len(result.citations) == 2
-
-    assert (
-    result.citations[0].retrieved_unit== result.retrieved_units[0]
-    )    
-
-
-def test_dense_retriever_filters_by_category(tmp_path):
-
-    embedding_model = SentenceTransformerEmbedding(
-        EmbeddingConfig(),
-    )
-
-    vector_store = FaissVectorStore(
-        VectorStoreConfig(
-            index_path=tmp_path / "index.faiss",
-            metadata_path=tmp_path / "metadata.json",
-        )
-    )
-
-    indexing = IndexingService(
-        embedding_model=embedding_model,
-        vector_store=vector_store,
-        config=IndexingConfig(),
-    )
-
-    indexing.index_document(
-        build_document(),
-    )
-
-    retriever = DenseRetriever(
-        embedding_model=embedding_model,
-        vector_store=vector_store,
+    retriever = MultiQueryRetriever(
+        query_expander=SimpleQueryExpander(),
+        retriever=dense_retriever,
+        ranker=SimilarityRanker(),
         citation_builder=DefaultCitationBuilder(),  
     )
 
     request = SearchRequest(
         query=Query(
-            text="Artificial Intelligence",
+            text="machine learning",
             top_k=5,
-            filters=SearchFilter(
-                categories=["ai"],
-            ),
         ),
-        strategy=RetrievalStrategy.DENSE,
+        strategy=RetrievalStrategy.MULTI_QUERY,
     )
 
     result = retriever.retrieve(
         request,
     )
 
-    assert len(result.retrieved_units) == 1
+    assert len(result.retrieved_units) >= 1
 
     assert (
-        result.retrieved_units[0]
-        .knowledge_unit.category
-        == "ai"
+        result.metadata.strategy
+        == RetrievalStrategy.MULTI_QUERY
     )
 
     assert (
-        result.metadata.returned_count
-        == 1
+        result.metadata.reranked
+        is True
     )
 
     assert (
-        result.metadata.candidate_count
-        == 2
+        result.metadata.metadata["query_expander"]
+        == "simple"
     )
+
+    assert (
+        int(
+            result.metadata.metadata["expanded_queries"]
+        )
+        == 4
+    )
+
+    ids = [
+        unit.knowledge_unit.id
+        for unit in result.retrieved_units
+    ]
+
+    assert len(ids) == len(set(ids))
