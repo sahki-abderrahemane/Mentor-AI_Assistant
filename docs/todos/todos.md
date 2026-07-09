@@ -17,3 +17,12 @@ HyDE (Hypothetical Document Embeddings)
 Query2Doc
 Step-back prompting
 Multi-vector expansion
+
+## 2.1 vector stores
+adding support for
+BM25
+CHROMA
+QDRANT
+PINECONE
+OPENAI
+JINA

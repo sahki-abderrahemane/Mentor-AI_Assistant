@@ -8,7 +8,7 @@ from .query import Query
 from .retrieval_event import RetrievalEvent
 from .retrieval_metadata import RetrievalMetadata
 from .retrieved_knowledge_unit import RetrievedKnowledgeUnit
-
+from retrieval.domain.evaluation_result import EvaluationResult
 
 class SearchResult(BaseEntity):
     """
@@ -36,4 +36,9 @@ class SearchResult(BaseEntity):
     processing_history: list[RetrievalEvent] = Field(
         default_factory=list,
         description="History of retrieval events."
+    )
+    
+    evaluation: EvaluationResult | None = Field(
+    default=None,
+    description="Optional retrieval evaluation.",
     )
