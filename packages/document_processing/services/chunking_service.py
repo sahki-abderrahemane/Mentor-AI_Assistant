@@ -23,11 +23,13 @@ class ChunkingService:
     2. Otherwise, split the section into paragraphs.
 
     3. For each paragraph:
-        - if it is valid, keep it.
         - if it is too large, split it into sentences.
 
+    4. Merge consecutive small fragments until the combined chunk
+       reaches the configured minimum size, so tiny pieces (e.g.
+       individual reference entries) become coherent chunks.
+
     Notes:
-        - Merging small chunks is NOT implemented yet.
         - Overlap is NOT implemented yet.
         - Recursive splitting is NOT implemented yet.
     """
@@ -42,6 +44,35 @@ class ChunkingService:
         self.paragraph_splitter = ParagraphSplitter()
         self.sentence_splitter = SentenceSplitter()
 
+    def _segment(
+        self,
+        section: Section,
+    ) -> list[str]:
+        """
+        Split the section into atomic pieces (paragraphs, falling back
+        to sentences for oversized paragraphs).
+        """
+
+        paragraphs = self.paragraph_splitter.split(section.text)
+
+        segments: list[str] = []
+
+        for paragraph in paragraphs:
+
+            if self.validator.is_valid(paragraph):
+                segments.append(paragraph)
+                continue
+
+            # Oversized paragraph -> split into sentences.
+            sentences = self.sentence_splitter.split(paragraph)
+
+            if len(sentences) <= 1:
+                segments.append(paragraph)
+            else:
+                segments.extend(sentences)
+
+        return segments
+
     def chunk(
         self,
         section: Section,
@@ -51,19 +82,32 @@ class ChunkingService:
         if self.validator.is_valid(section.text):
             return [section.text]
 
+        segments = self._segment(section)
+
         chunks: list[str] = []
+        buffer: list[str] = []
+        buffer_words = 0
 
-        paragraphs = self.paragraph_splitter.split(section.text)
+        def flush() -> None:
+            nonlocal buffer, buffer_words
+            if buffer:
+                chunks.append("\n\n".join(buffer))
+            buffer = []
+            buffer_words = 0
 
-        for paragraph in paragraphs:
+        for segment in segments:
+            segment_words = len(segment.split())
 
-            if self.validator.is_valid(paragraph):
-                chunks.append(paragraph)
-                continue
+            # Don't let the buffer exceed max_words once it has started.
+            if buffer and buffer_words + segment_words > self.config.max_words:
+                flush()
 
-            # Oversized paragraph -> split into sentences.
-            sentences = self.sentence_splitter.split(paragraph)
+            buffer.append(segment)
+            buffer_words += segment_words
 
-            chunks.extend(sentences)
+            if buffer_words >= self.config.min_words:
+                flush()
+
+        flush()
 
         return chunks

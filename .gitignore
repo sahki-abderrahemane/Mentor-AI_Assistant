@@ -138,3 +138,4 @@ out/
 # Docker
 # ==========================================
 docker-compose.override.yml
+.continue/

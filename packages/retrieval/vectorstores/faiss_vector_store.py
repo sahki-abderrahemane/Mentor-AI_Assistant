@@ -236,3 +236,82 @@ class FaissVectorStore(BaseVectorStore):
         self.index = None
 
         self.metadata.clear()
+
+    def remove_document(
+        self,
+        document_id: str,
+    ) -> None:
+        """
+        Remove every Knowledge Unit belonging to the given document and
+        rebuild the FAISS index from the surviving embeddings.
+        """
+
+        document_id = str(document_id)
+
+        keep_indices: list[int] = []
+
+        for idx, ku in enumerate(self.metadata):
+
+            ku_doc_id = getattr(ku, "document_id", None)
+
+            if ku_doc_id is None or str(ku_doc_id) != document_id:
+
+                keep_indices.append(idx)
+
+        if len(keep_indices) == len(self.metadata):
+
+            return
+
+        kept_metadata = [
+            self.metadata[idx]
+            for idx in keep_indices
+        ]
+
+        if self.index is not None and self.index.ntotal > 0:
+
+            all_vectors = self.index.reconstruct_n(
+                0,
+                self.index.ntotal,
+            )
+
+            if len(all_vectors) != len(self.metadata):
+
+                raise RuntimeError(
+                    "FAISS index and metadata length mismatch; cannot safely remove document.",
+                )
+
+            kept_vectors = all_vectors[
+                keep_indices
+            ]
+
+            dimension = kept_vectors.shape[1] if len(kept_vectors) else 0
+
+            if dimension:
+
+                metric = self.config.metric.lower()
+
+                if metric == "cosine":
+
+                    new_index = faiss.IndexFlatIP(
+                        dimension,
+                    )
+
+                else:
+
+                    new_index = faiss.IndexFlatL2(
+                        dimension,
+                    )
+
+                new_index.add(
+                    kept_vectors,
+                )
+
+                self.index = new_index
+
+            else:
+
+                self.index = None
+
+        self.metadata = kept_metadata
+
+        self.save()
