@@ -37,6 +37,82 @@ Done.
 
     assert headings[3].text == "Conclusion"
 
+
+def test_heading_detector_title_case():
+
+    detector = HeadingDetector()
+
+    text = """
+Data Alone Is Not Enough
+
+Some body text that is a normal sentence and continues at length here.
+
+More Data Beats Cleverer Algorithms
+
+More body text that is also a normal sentence and continues further here.
+
+Conclusion
+
+Done.
+"""
+
+    headings = detector.detect(text)
+
+    titles = [h.text for h in headings]
+
+    assert "Data Alone Is Not Enough" in titles
+
+    assert "More Data Beats Cleverer Algorithms" in titles
+
+    assert "Conclusion" in titles
+
+
+def test_heading_detector_ignores_sentences():
+
+    detector = HeadingDetector()
+
+    text = """
+Machine learning papers are full of theoretical guarantees.
+
+This is a normal sentence that should never be treated as a heading.
+
+Building a classifier in two or three dimensions is a comparatively easy task.
+"""
+
+    headings = detector.detect(text)
+
+    assert len(headings) == 0
+
+
+def test_heading_detector_suppresses_title_case_in_references():
+
+    detector = HeadingDetector()
+
+    text = """
+Introduction
+
+Some introduction body text appears here for length.
+
+References
+
+Bauer, E. and Kohavi, R. An empirical comparison of voting classification.
+
+Domingos, P. and Pazzani, M. On the optimality of the simple Bayesian classifier.
+
+International Conference on Machine Learning.
+"""
+
+    headings = detector.detect(text)
+
+    titles = [h.text for h in headings]
+
+    assert "Introduction" in titles
+
+    assert "References" in titles
+
+    # Reference entries / venue names must not become headings.
+    assert len(headings) == 2
+
 from document_processing.detectors.hierarchy_builder import (
     HierarchyBuilder,
 )

@@ -1,0 +1,70 @@
+# Repo-root Docker build context (used by ai-training service).
+# See src/apps/web/backend/docker-compose.yml -> ai-training.build.context.
+# Docker ignores are matched relative to the context root; use **/ for nesting.
+
+# VCS / IDE
+.git
+.continue
+.vscode
+.idea
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.tox/
+**/.nox/
+**/htmlcov/
+**/.coverage*
+
+# Virtual environments & toolchains
+**/venv/
+**/.venv/
+**/env/
+**/ENV/
+.python-version
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# Node
+**/node_modules/
+**/.next/
+**/out/
+
+# Large data / models (downloaded at runtime into the HF cache)
+datasets/
+**/datasets/
+**/models/
+**/data/
+**/checkpoints/
+**/cache/
+**/storage/
+**/mlruns/
+**/sentence_transformers/
+**/*.bin
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.safetensors
+**/*.onnx
+**/*.faiss
+
+# Bundles / wheels used by specific service builds
+**/*.whl
+**/docker-compose.override.yml
+
+# Misc
+**/*.log
+tmp/
+temp/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
