@@ -325,7 +325,3 @@ Frontend service per domain in `src/apps/web/services/*.service.ts` picks mock v
 **Active development.** Web app + NestJS backend + Python engines are implemented and wired via mock/real switch. `src/apps/api`, `src/apps/worker`, `src/backend`, `packages/types`, `evaluations/`, `experiments/` remain placeholders for future extraction.
 
 ---
-
-## License
-
-Add your preferred license here.
