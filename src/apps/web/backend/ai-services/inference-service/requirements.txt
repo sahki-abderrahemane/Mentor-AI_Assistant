@@ -1,0 +1,15 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+sentence-transformers>=3.0.0
+peft>=0.14.0
+accelerate>=1.0.0
+numpy>=1.26.0
+loguru>=0.7.0
+omegaconf>=2.3.0
+python-dotenv>=1.0.0
+rich>=13.0.0
+tqdm>=4.65.0
+# Note: /packages/mentorai-finetuning is mounted at runtime via docker-compose
+# volume; PYTHONPATH in the Dockerfile points to its src/ directory.

@@ -1,0 +1,2 @@
+{"id": "sample_0000000", "messages": [{"role": "user", "content": "Explain LoRA."}, {"role": "assistant", "content": "LoRA is a parameter-efficient fine-tuning technique."}], "metadata": {"source": "demo", "language": "en", "domain": "llm", "license": null, "tags": [], "quality_score": null}}
+{"id": "sample_0000001", "messages": [{"role": "user", "content": "What is QLoRA?"}, {"role": "assistant", "content": "QLoRA combines 4-bit quantization with LoRA."}], "metadata": {"source": "demo", "language": "en", "domain": "llm", "license": null, "tags": [], "quality_score": null}}

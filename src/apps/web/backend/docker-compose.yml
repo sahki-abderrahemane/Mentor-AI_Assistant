@@ -1,0 +1,123 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mentorai
+      POSTGRES_USER: mentorai
+      POSTGRES_PASSWORD: mentorai123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mentorai -d mentorai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-inference:
+    build:
+      context: ./ai-services/inference-service
+      dockerfile: Dockerfile
+    ports:
+      - "8010:8000"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+      - ../../../../packages/mentorai-finetuning:/packages/mentorai-finetuning:ro
+    environment:
+      - DEPLOYMENT_BACKEND=${DEPLOYMENT_BACKEND:-transformers}
+      - DEPLOYMENT_MODEL_NAME=${DEPLOYMENT_MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+      - DEPLOYMENT_DEVICE=${DEPLOYMENT_DEVICE:-cpu}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ai-processing:
+    build:
+      context: ./ai-services/processing-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - vector_store:/data
+      - ./uploads:/app/uploads
+      - ./ai-services/processing-service/main.py:/app/main.py:ro
+      - ../../../../packages/document_processing:/packages/document_processing:ro
+      - ../../../../packages/retrieval:/packages/retrieval:ro
+      - ../../../../packages/types:/packages/types:ro
+    environment:
+      - VECTOR_STORE_PATH=/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ai-training:
+    build:
+      context: ../../../..
+      dockerfile: src/apps/web/backend/ai-services/training-service/Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - training_output:/output
+      - model_cache:/root/.cache/huggingface
+      - ./data:/data
+      - ../../../../packages/mentorai-finetuning:/packages/mentorai-finetuning:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8002/health', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-inference:
+        condition: service_healthy
+      ai-processing:
+        condition: service_healthy
+      ai-training:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+      - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:
+  redis_data:
+  vector_store:
+  model_cache:
+  training_output:
+  uploads:
+  backend_data:

@@ -1,0 +1,18 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+pymupdf>=1.24.0
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+torch>=2.0.0
+transformers>=4.40.0
+loguru>=0.7.0
+omegaconf>=2.3.0
+python-dotenv>=1.0.0
+rich>=13.0.0
+tqdm>=4.65.0
+# Note: packages/document_processing, packages/retrieval, packages/types
+# are mounted into /packages at runtime via docker-compose and added to PYTHONPATH.
+# packages/mentorai-finetuning is also mounted for shared types.
